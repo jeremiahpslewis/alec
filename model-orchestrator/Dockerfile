@@ -7,3 +7,5 @@ COPY requirements.txt src/ /app/
 RUN apt-get update && apt-get install gcc && \
     pip install --upgrade pip  && \
     pip install -r requirements.txt
+
+CMD ["dagit", "-f", "main.py"]
