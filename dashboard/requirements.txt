@@ -1,0 +1,2 @@
+streamlit==0.80.*
+pandas==1.2.*
