@@ -9,4 +9,4 @@ RUN apt-get update && apt-get install -y build-essential gcc && apt-get clean
 RUN pip install --upgrade pip  && \
     pip install -r requirements.txt
 
-CMD ["streamlit", "hello"]
+CMD ["streamlit", "main.py"]
