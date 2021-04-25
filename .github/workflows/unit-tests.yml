@@ -1,0 +1,23 @@
+name: Run Unit Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "12"
+
+      - name: Install Garden
+        run: |
+          curl -sL https://get.garden.io/install.sh | bash
+
+      - name: Run Unit Tests
+        run: |
+          garden dev

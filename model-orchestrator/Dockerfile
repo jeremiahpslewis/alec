@@ -4,8 +4,9 @@ WORKDIR /app
 
 COPY requirements.txt src/ /app/
 
-RUN apt-get update && apt-get install -y gcc && \
-    pip install --upgrade pip  && \
+RUN apt-get update && apt-get install -y build-essential gcc && apt-get clean
+
+RUN pip install --upgrade pip  && \
     pip install -r requirements.txt
 
 CMD ["dagit", "-f", "main.py"]
