@@ -2,11 +2,13 @@ FROM python:3.9-slim-buster
 
 WORKDIR /app
 
-COPY requirements.txt src/ /app/
-
 RUN apt-get update && apt-get install -y build-essential gcc && apt-get clean
+
+COPY requirements.txt /app/
 
 RUN pip install --upgrade pip  && \
     pip install -r requirements.txt
 
-CMD ["streamlit", "main.py"]
+COPY src/ /app/j
+
+CMD ["streamlit", "run", "main.py"]
