@@ -130,3 +130,5 @@ dmypy.json
 
 .garden/
 *.parquet
+
+.DS_Store
