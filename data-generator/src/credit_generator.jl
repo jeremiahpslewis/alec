@@ -1,7 +1,7 @@
 using Turing
 using StatsPlots
 using Distributions
-using Arrow
+using Parquet
 using DataFrames
 using Chain
 
@@ -38,7 +38,7 @@ individuals_df
 
 portfolio_df = leftjoin(individuals_df[!, [:application_date, :individual_default_risk]], business_cycle_df, on=:application_date)
 
-portfolio_df[!, :total_default_risk] = portfolio_df[!, :individual_default_risk] .+ portfolio_df[!, :business_cycle_default_risk]
+portfolio_df[!, :total_default_risk] = clamp.(portfolio_df[!, :individual_default_risk] .+ portfolio_df[!, :business_cycle_default_risk], 0, 1)
 
 portfolio_df[!, :default] = rand.(Bernoulli.(portfolio_df[!, :total_default_risk]))
 
@@ -55,3 +55,6 @@ end
 
 @df business_cycle_df plot!(:application_date, :business_cycle_default_risk)
 
+@chain portfolio_df begin
+    write_parquet("portfolio_df.parquet", _)
+end
