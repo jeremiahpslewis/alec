@@ -1,3 +1,9 @@
 kind: Module
 type: container
 name: data-generator
+tasks:
+  - name: my-task
+    command: [julia, credit_generator.jl, --project=.]
+    artifacts:
+      - source: /portfolio_df.parquet
+        target: synthetic-data
