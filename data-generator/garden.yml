@@ -2,8 +2,14 @@ kind: Module
 type: container
 name: data-generator
 tasks:
-  - name: my-task
+  - name: generate-synthetic-data
+    disabled: true
     command: [julia, credit_generator.jl, --project=.]
     artifacts:
       - source: /portfolio_df.parquet
         target: synthetic-data
+services:
+  - name: dash1
+    ports:
+      - name: http
+        containerPort: 1000
