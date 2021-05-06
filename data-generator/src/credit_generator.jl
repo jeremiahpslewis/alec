@@ -7,6 +7,7 @@ using Distributions
 using Parquet
 using DataFrames
 using Chain
+using UUIDs
 
 n = 10000
 
@@ -61,6 +62,11 @@ portfolio_df[!, :total_default_risk] =
 
 portfolio_df[!, :default] = rand.(Bernoulli.(portfolio_df[!, :total_default_risk]))
 
+function return_uuid(x)
+    return string(UUIDs.uuid4())
+end
+
+portfolio_df[!, :application_id] = return_uuid.(portfolio_df[!, :total_default_risk])
 
 @df portfolio_df boxplot(:default, :total_default_risk)
 
@@ -75,5 +81,5 @@ end
 @df business_cycle_df plot!(:application_date, :business_cycle_default_risk)
 
 @chain portfolio_df begin
-    write_parquet("/shared-volume/portfolio_df.parquet", _)
+    write_parquet("/app/portfolio_df.parquet", _)
 end

@@ -7,7 +7,7 @@ hotReload:
 tasks:
   - name: generate-synthetic-data
     command: [julia, /app/credit_generator.jl]
-    disabled: true
+    disabled: false
     env:
       JULIA_PROJECT: "@."
     artifacts:
