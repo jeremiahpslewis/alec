@@ -1,10 +1,11 @@
+from uuid import uuid4
+
 import pandas as pd
 from dagster import pipeline, solid
 from sklearn import linear_model
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler
-from uuid import uuid4
 
 
 def get_raw_data():
@@ -13,7 +14,7 @@ def get_raw_data():
 
 
 @solid
-def gather_historical_data(context, epoch_start: int = 0) -> pd.DataFrame:
+def get_historical_data(context, epoch_start: int = 0) -> pd.DataFrame:
     historical_df = get_raw_data()
     historical_df = historical_df.loc[
         historical_df.application_date < (epoch_start + 1) * 100
@@ -27,17 +28,7 @@ def empty_dataframe(_) -> pd.DataFrame:
 
 
 @solid
-def merge_data(
-    context,
-    historical_data: pd.DataFrame,
-    new_data: pd.DataFrame,
-    applications_df: pd.DataFrame,
-) -> pd.DataFrame:
-    return historical_data.append(new_data)
-
-
-@solid
-def fetch_model_pipeline(_) -> Pipeline:
+def get_model_pipeline(_) -> Pipeline:
     column_trans = ColumnTransformer(
         [
             ("individual_default_risk", StandardScaler(), ["individual_default_risk"]),
@@ -67,11 +58,12 @@ def train_model(
 
 
 @solid
-def collect_applications(context, epoch: int) -> pd.DataFrame:
+def get_applications(context) -> pd.DataFrame:
     """
-    Collects applications for new loans from customers
+    gets applications for new loans from customers
     """
 
+    # TODO: Use epoch from for loop in pipeline epoch: int
     applications_df = get_raw_data()
     applications_df = applications_df.loc[
         (applications_df.application_date >= epoch * 100)
@@ -179,17 +171,25 @@ def observe_outcomes(
     )
     return portfolio_outcomes_df
 
+@solid
+def merge_data(
+    context,
+    historical_data: pd.DataFrame,
+    new_data: pd.DataFrame,
+    applications_df: pd.DataFrame,
+) -> pd.DataFrame:
+    return historical_data.append(new_data)
 
 @pipeline
 def active_learning_credit_pipeline():
-    historical_data = gather_historical_data()
+    historical_data = get_historical_data()
+    model_pipeline = get_model_pipeline()
 
-    for t in range(10):
-        model_pipeline = fetch_model_pipeline()
+    for t in range(10):    
 
         trained_model = train_model(historical_data, model_pipeline)
 
-        applications_df = collect_applications(t)
+        applications_df = get_applications()
 
         business_portfolio_df = choose_business_portfolio(
             applications_df, trained_model
