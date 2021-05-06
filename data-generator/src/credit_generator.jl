@@ -1,3 +1,6 @@
+# using Pkg
+# Pkg.activate("/app")
+
 using Turing
 using StatsPlots
 using Distributions
@@ -7,6 +10,7 @@ using Chain
 
 n = 10000
 
+# Delete this line
 # Credit Default Dataset with Business Cycle Effects
 # Assume income, personal default risk, application rate are independent
 @model function individual_attributes()
@@ -71,5 +75,5 @@ end
 @df business_cycle_df plot!(:application_date, :business_cycle_default_risk)
 
 @chain portfolio_df begin
-    write_parquet("portfolio_df.parquet", _)
+    write_parquet("/shared-volume/portfolio_df.parquet", _)
 end

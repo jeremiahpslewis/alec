@@ -1,6 +1,9 @@
 kind: Module
 type: container
 name: model-orchestrator
+hotReload:
+  sync:
+  - target: /app
 services:
   - name: dagster
     ports:

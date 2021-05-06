@@ -1,15 +1,22 @@
 kind: Module
 type: container
-name: data-generator
+name: generate-synthetic-data
+hotReload:
+  sync:
+  - target: /app
 tasks:
   - name: generate-synthetic-data
+    command: [julia, /app/credit_generator.jl]
     disabled: true
-    command: [julia, credit_generator.jl, --project=.]
+    env:
+      JULIA_PROJECT: "@."
     artifacts:
-      - source: /portfolio_df.parquet
+      - source: /app/portfolio_df.parquet
         target: synthetic-data
 services:
-  - name: dash1
+  - name: julia-server
+    disabled: false
+    command: [julia, -e, 'sleep(1000)']
     ports:
       - name: http
         containerPort: 1000
