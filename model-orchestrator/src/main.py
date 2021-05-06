@@ -9,8 +9,6 @@ from uuid import uuid4
 
 def get_raw_data():
     raw_df = pd.read_parquet("portfolio_df.parquet")
-    # TODO: Move the application id generation to data sim code!
-    raw_df["application_id"] = raw_df.application_date.apply(lambda x: str(uuid4()))
     return raw_df
 
 
@@ -29,7 +27,7 @@ def empty_dataframe(_) -> pd.DataFrame:
 
 
 @solid
-def merge_data(historical_data, new_data) -> pd.DataFrame:
+def merge_data(context, historical_data: pd.DataFrame, new_data: pd.DataFrame, applications_df: pd.DataFrame) -> pd.DataFrame:
     return historical_data.append(new_data)
 
 
@@ -149,14 +147,14 @@ def grant_credit(
 
 
 @solid
-def observe_outcomes(context, portfolio_df: pd.DataFrame) -> pd.DataFrame:
+def observe_outcomes(context, applications_df: pd.DataFrame, portfolio_df: pd.DataFrame) -> pd.DataFrame:
     """
     Observe outcomes to granted credit.
     """
 
-    raw_data = get_raw_data()[["application_id", "default"]]
-    pd.merge(portfolio_df, raw_data, on="application_id", how="left")
-    return pd.DataFrame()
+    raw_data = applications_df[["application_id", "default"]]
+    portfolio_outcomes_df = pd.merge(portfolio_df, raw_data, on="application_id", how="left")
+    return portfolio_outcomes_df
 
 
 @pipeline
@@ -182,5 +180,5 @@ def active_learning_credit_pipeline():
             applications_df, business_portfolio_df, research_portfolio_df
         )
 
-        new_data = observe_outcomes(portfolio_df)
-        historical_data = merge_data(historical_data, new_data)
+        portfolio_outcomes_df = observe_outcomes(applications_df, portfolio_df)
+        historical_data = merge_data(historical_data, portfolio_outcomes_df, applications_df)
