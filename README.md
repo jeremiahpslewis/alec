@@ -11,4 +11,7 @@ Active Learning Experiment — Credit (ALEC)
 ```bash
 brew tap garden-io/garden
 brew install garden-cli
+
+garden dev
+garden exec dagster bash
 ```
