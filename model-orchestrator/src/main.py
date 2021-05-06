@@ -27,7 +27,12 @@ def empty_dataframe(_) -> pd.DataFrame:
 
 
 @solid
-def merge_data(context, historical_data: pd.DataFrame, new_data: pd.DataFrame, applications_df: pd.DataFrame) -> pd.DataFrame:
+def merge_data(
+    context,
+    historical_data: pd.DataFrame,
+    new_data: pd.DataFrame,
+    applications_df: pd.DataFrame,
+) -> pd.DataFrame:
     return historical_data.append(new_data)
 
 
@@ -118,11 +123,15 @@ def choose_research_portfolio(
 
     business_portfolio: {"application_id", "loan_granted"} as pd.DataFrame
     """
-    research_portfolio_df =  applications_df[
-        ~applications_df.application_id.isin(
-            business_portfolio_df.application_id.tolist()
-        )
-    ].sample(n_research_budget)[["application_id"]].reset_index(drop=True)
+    research_portfolio_df = (
+        applications_df[
+            ~applications_df.application_id.isin(
+                business_portfolio_df.application_id.tolist()
+            )
+        ]
+        .sample(n_research_budget)[["application_id"]]
+        .reset_index(drop=True)
+    )
 
     return research_portfolio_df
 
@@ -138,8 +147,18 @@ def grant_credit(
     Grant credit to individuals and observe outcomes
     """
     applications_df["portfolio"] = "rejected"
-    applications_df.loc[applications_df.application_id.isin(business_portfolio_df.application_id.tolist()), "portfolio"] = "business"
-    applications_df.loc[applications_df.application_id.isin(research_portfolio_df.application_id.tolist()), "portfolio"] = "research"
+    applications_df.loc[
+        applications_df.application_id.isin(
+            business_portfolio_df.application_id.tolist()
+        ),
+        "portfolio",
+    ] = "business"
+    applications_df.loc[
+        applications_df.application_id.isin(
+            research_portfolio_df.application_id.tolist()
+        ),
+        "portfolio",
+    ] = "research"
 
     applications_df["credit_granted"] = applications_df.portfolio != "rejected"
     portfolio_df = applications_df[["application_id", "portfolio", "credit_granted"]]
@@ -147,13 +166,17 @@ def grant_credit(
 
 
 @solid
-def observe_outcomes(context, applications_df: pd.DataFrame, portfolio_df: pd.DataFrame) -> pd.DataFrame:
+def observe_outcomes(
+    context, applications_df: pd.DataFrame, portfolio_df: pd.DataFrame
+) -> pd.DataFrame:
     """
     Observe outcomes to granted credit.
     """
 
     raw_data = applications_df[["application_id", "default"]]
-    portfolio_outcomes_df = pd.merge(portfolio_df, raw_data, on="application_id", how="left")
+    portfolio_outcomes_df = pd.merge(
+        portfolio_df, raw_data, on="application_id", how="left"
+    )
     return portfolio_outcomes_df
 
 
@@ -181,4 +204,6 @@ def active_learning_credit_pipeline():
         )
 
         portfolio_outcomes_df = observe_outcomes(applications_df, portfolio_df)
-        historical_data = merge_data(historical_data, portfolio_outcomes_df, applications_df)
+        historical_data = merge_data(
+            historical_data, portfolio_outcomes_df, applications_df
+        )
