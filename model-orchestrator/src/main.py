@@ -1,5 +1,3 @@
-from uuid import uuid4
-
 import pandas as pd
 from dagster import pipeline, solid
 from sklearn import linear_model
