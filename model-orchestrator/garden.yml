@@ -14,4 +14,4 @@ services:
 tasks:
   - name: run-alec
     disabled: true
-    command: ["dagster", "-f", "main.py", "--config", "config.yml"]
+    command: ["dagster", "pipeline", "execute", "-f", "main.py"]
