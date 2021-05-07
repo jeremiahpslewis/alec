@@ -1,32 +1,32 @@
 solids:
-  get_epoch:
+  get_param_epoch:
     config:
-      epoch: 0
+      param_epoch: 0
   get_epoch_10:
     config:
-      epoch: 9
+      param_epoch: 9
   get_epoch_2:
     config:
-      epoch: 1
+      param_epoch: 1
   get_epoch_3:
     config:
-      epoch: 2
+      param_epoch: 2
   get_epoch_4:
     config:
-      epoch: 3
+      param_epoch: 3
   get_epoch_5:
     config:
-      epoch: 4
+      param_epoch: 4
   get_epoch_6:
     config:
-      epoch: 5
+      param_epoch: 5
   get_epoch_7:
     config:
-      epoch: 6
+      param_epoch: 6
   get_epoch_8:
     config:
-      epoch: 7
+      param_epoch: 7
   get_epoch_9:
     config:
-      epoch: 8
+      param_epoch: 8
 

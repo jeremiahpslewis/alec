@@ -25,7 +25,6 @@ def get_raw_data():
     return raw_df
 
 
-@solid
 def get_historical_data(
     context, epoch_start: int = 0
 ) -> list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -53,6 +52,17 @@ def get_historical_data(
         "outcomes": hist_outcome_df,
     }
 
+@solid
+def get_historical_application_data(_):
+    return get_historical_data()["applications"]
+
+@solid
+def get_historical_portfolio_data(_):
+    return get_historical_data()["portfolio"]
+
+@solid
+def get_historical_outcome_data(_):
+    return get_historical_data()["outcomes"]
 
 @solid
 def get_model_pipeline(context, model_spec=1) -> Pipeline:
@@ -129,17 +139,12 @@ def train_model(
 
 
 @solid(config_schema={"epoch": int})
-def get_epoch():
-    epoch = context.solid_config["epoch"]
-
-    return epoch
-
-
-@solid
-def get_applications(context, application_df: pd.DataFrame, epoch: int) -> pd.DataFrame:
+def get_applications(context, application_df: pd.DataFrame) -> pd.DataFrame:
     """
     gets applications for new loans from customers
     """
+
+    epoch = context.solid_config["epoch"]
 
     raw_application_df = get_raw_data()
     new_application_df = raw_application_df.loc[
@@ -152,13 +157,12 @@ def get_applications(context, application_df: pd.DataFrame, epoch: int) -> pd.Da
     ).reset_index(drop=True)
 
 
-@solid
+@solid(config_schema={"epoch": int})
 def choose_business_portfolio(
     context,
     application_df: pd.DataFrame,
     portfolio_df: pd.DataFrame,
     model_pipeline: Pipeline,
-    epoch: int,
     n_loan_budget: int = 100,
 ) -> pd.DataFrame:
     """
@@ -167,6 +171,8 @@ def choose_business_portfolio(
     applications: pd.DataFrame
     model: machine learning model (pipeline) which can be applied to applications, based on training data
     """
+
+    epoch = context.solid_config["epoch"]
 
     current_application_df = application_df.loc[
         (application_df.application_date >= epoch * 100)
@@ -194,7 +200,7 @@ def choose_business_portfolio(
     return portfolio_df.append(business_portfolio_df[full_portfolio_col_set])
 
 
-@solid
+@solid(config_schema={"epoch": int})
 def choose_research_portfolio(
     context,
     application_df: pd.DataFrame,
@@ -202,7 +208,6 @@ def choose_research_portfolio(
     outcome_df: pd.DataFrame,
     model_pipeline: Pipeline,
     active_learning_pipeline: Pipeline,
-    epoch: int,
     n_research_budget: int = 20,
 ) -> pd.DataFrame:
     """
@@ -210,6 +215,9 @@ def choose_research_portfolio(
 
     business_portfolio: {"application_id", "credit_granted"} as pd.DataFrame
     """
+
+    epoch = context.solid_config["epoch"]
+
     unfunded_applications = application_df[
         ~application_df.application_id.isin(portfolio_df.application_id.tolist())
         & (application_df.application_date >= epoch * 100)
@@ -247,15 +255,13 @@ def observe_outcomes(
 
 @pipeline
 def active_learning_experiment_credit():
-    data = get_historical_data()
-    application_df = data["applications"]
-    portfolio_df = data["portfolio"]
-    outcome_df = data["outcomes"]
+    application_df = get_historical_application_data()
+    portfolio_df = get_historical_portfolio_data()
+    outcome_df = get_historical_outcome_data()
+    model_pipeline = get_model_pipeline()
+    active_learning_pipeline = get_active_learning_pipeline()
 
     for t in range(10):
-        epoch = get_epoch()
-        model_pipeline = get_model_pipeline()
-        active_learning_pipeline = get_active_learning_pipeline()
 
         trained_model = train_model(
             application_df,
@@ -264,9 +270,9 @@ def active_learning_experiment_credit():
             model_pipeline,
         )
 
-        application_df = get_applications(epoch)
+        application_df = get_applications()
 
-        portfolio_df = choose_business_portfolio(application_df, trained_model, epoch)
+        portfolio_df = choose_business_portfolio(application_df, trained_model)
 
         portfolio_df = choose_research_portfolio(
             application_df,
@@ -274,7 +280,6 @@ def active_learning_experiment_credit():
             outcome_df,
             trained_model,
             active_learning_pipeline,
-            epoch
         )
 
         outcome_df = observe_outcomes(portfolio_df, outcome_df)
