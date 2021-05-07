@@ -11,3 +11,7 @@ services:
         containerPort: 3000
     dependencies:
       - generate-synthetic-data
+tasks:
+  - name: run-alec
+    disabled: true
+    command: ["dagster", "-f", "main.py", "--config", "config.yml"]
