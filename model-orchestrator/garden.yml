@@ -1,9 +1,6 @@
 kind: Module
 type: container
 name: model-orchestrator
-hotReload:
-  sync:
-  - target: /app
 services:
   - name: dagster
     ports:
@@ -11,7 +8,16 @@ services:
         containerPort: 3000
     dependencies:
       - generate-synthetic-data
+    devMode:
+      sync:
+        - target: /app
+          mode: two-way
+      
 tasks:
   - name: run-alec
+    disabled: true
+    command: ["dagster", "pipeline", "execute", "-f", "main.py"]
+tests:
+  - name: test-alec
     disabled: true
     command: ["dagster", "pipeline", "execute", "-f", "main.py"]

@@ -1,5 +1,5 @@
 import pandas as pd
-from dagster import pipeline, solid
+from dagster import pipeline, solid, execute_pipeline
 from sklearn import linear_model
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
@@ -9,10 +9,9 @@ metadata = ["application_date", "application_id"]
 X_vars = ["individual_default_risk", "business_cycle_default_risk"]
 y_var = ["default"]
 
-full_application_col_set = [*metadata, *X_vars, *y_var]
+full_application_col_set = [*metadata, *X_vars]
 full_portfolio_col_set = [
     "application_id",
-    "default",
     "portfolio",
     "credit_granted",
     "funding_probability",
@@ -26,7 +25,7 @@ def get_raw_data():
 
 
 def get_historical_data(
-    context, epoch_start: int = 0
+    epoch_start: int = 0,
 ) -> list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     df = get_raw_data()
     df["portfolio"] = "business"
@@ -43,7 +42,7 @@ def get_historical_data(
     ].copy()
 
     hist_outcome_df = df.loc[
-        df.application_date < (epoch_start + 1) * 100, full_portfolio_col_set
+        df.application_date < (epoch_start + 1) * 100, full_outcome_col_set
     ].copy()
 
     return {
@@ -52,17 +51,21 @@ def get_historical_data(
         "outcomes": hist_outcome_df,
     }
 
+
 @solid
 def get_historical_application_data(_):
     return get_historical_data()["applications"]
+
 
 @solid
 def get_historical_portfolio_data(_):
     return get_historical_data()["portfolio"]
 
+
 @solid
 def get_historical_outcome_data(_):
     return get_historical_data()["outcomes"]
+
 
 @solid
 def get_model_pipeline(context, model_spec=1) -> Pipeline:
@@ -125,21 +128,29 @@ def train_model(
     model: machine learning model (pipeline) which can be applied to training data
     """
     training_df = pd.merge(
-        pd.merge(application_df, portfolio_df), outcome_df, on="application_id"
+        pd.merge(application_df, portfolio_df, on="application_id", how="left"), outcome_df, on="application_id", how="left"
     )
 
     # NOTE: Check here that rows are not dropped / added!
     assert training_df.shape[0] == application_df.shape[0]
-    assert training_df.shape[0] == portfolio_df.shape[0]
-    assert training_df.shape[0] == outcome_df.shape[0]
+    assert training_df.portfolio.notnull().sum() == portfolio_df.shape[0]
+    assert training_df.default.notnull().sum() == outcome_df.shape[0]
     assert training_df.application_id.duplicated().sum() == 0
 
-    model_pipeline.fit(training_df.loc[:, X_vars], training_df["default"])
+    # NOTE: Currently all cases without observed default are dropped for ML model!
+    
+    training_df = training_df.loc[training_df.default.notnull()].copy()
+    
+    try:
+        model_pipeline.fit(training_df.loc[:, X_vars], training_df["default"].astype("int"))
+    except Exception:
+        training_df.to_parquet(f"debug_{training_df.application_date.max()}.parquet")
+
     return model_pipeline
 
 
 @solid(config_schema={"epoch": int})
-def get_applications(context, application_df: pd.DataFrame) -> pd.DataFrame:
+def get_applications(context, application_df) -> pd.DataFrame:
     """
     gets applications for new loans from customers
     """
@@ -177,12 +188,17 @@ def choose_business_portfolio(
     current_application_df = application_df.loc[
         (application_df.application_date >= epoch * 100)
         & (application_df.application_date < (epoch + 1) * 100)
-    ]
+    ].copy().reset_index(drop=True)
+
+    # NOTE: No applications this epoch!
+    if current_application_df.shape[0] == 0:
+        return portfolio_df
+
 
     current_application_df["est_default_prob"] = pd.DataFrame(
         model_pipeline.predict_proba(
             current_application_df.loc[
-                :, ["individual_default_risk", "business_cycle_default_risk"]
+                :, X_vars
             ]
         )
     ).loc[:, 1]
@@ -193,10 +209,12 @@ def choose_business_portfolio(
 
     business_portfolio_df = current_application_df.loc[
         current_application_df["est_default_prob"].rank(method="first") <= n_loan_budget
-    ][["application_id"]].reset_index(drop=True)
+    ].copy()[["application_id"]].reset_index(drop=True)
 
+    business_portfolio_df["portfolio"] = "business"
     business_portfolio_df["funding_probability"] = 1  # TODO: Change this?
     business_portfolio_df["credit_granted"] = True
+
     return portfolio_df.append(business_portfolio_df[full_portfolio_col_set])
 
 
@@ -227,6 +245,7 @@ def choose_research_portfolio(
     research_portfolio_df = unfunded_applications.sample(n_research_budget)[
         ["application_id"]
     ].reset_index(drop=True)
+
     research_portfolio_df["portfolio"] = "research"
     research_portfolio_df["credit_granted"] = True
     research_portfolio_df["funding_probability"] = (
@@ -242,14 +261,13 @@ def observe_outcomes(
     """
     Observe outcomes to granted credit.
     """
-    new_loans = portfolio_df[
-        ~portfolio_df.application_id.isin(outcome_df.application_id.tolist()),
-        "application_id",
-    ].tolist()
+    epoch = context.solid_config["epoch"]
 
     raw_data = get_raw_data()
+    new_loan_outcomes = raw_data.loc[(raw_data.application_date >= epoch * 100)
+        & (raw_data.application_date < (epoch + 1) * 100) & (raw_data.application_id.isin(portfolio_df.application_id.tolist()))].copy()
     return outcome_df.append(
-        raw_data[raw_data.application_id.isin(new_loans), full_outcome_col_set]
+        new_loan_outcomes[full_outcome_col_set]
     )
 
 
@@ -270,9 +288,11 @@ def active_learning_experiment_credit():
             model_pipeline,
         )
 
-        application_df = get_applications()
+        application_df = get_applications(application_df)
 
-        portfolio_df = choose_business_portfolio(application_df, trained_model)
+        portfolio_df = choose_business_portfolio(
+            application_df, portfolio_df, trained_model
+        )
 
         portfolio_df = choose_research_portfolio(
             application_df,
@@ -283,3 +303,29 @@ def active_learning_experiment_credit():
         )
 
         outcome_df = observe_outcomes(portfolio_df, outcome_df)
+
+
+def var_if_gr_1(i, var):
+    if i > 1:
+        return f"{var}_{i}"
+    else:
+        return var
+
+
+run_config = {
+    "solids": {
+        var_if_gr_1(i + 1, var): {"config": {"epoch": i + 1}}
+        for i in range(10)
+        for var in [
+            "choose_business_portfolio",
+            "get_applications",
+            "choose_research_portfolio",
+            "observe_outcomes",
+        ]
+    }
+}
+
+result = execute_pipeline(
+    pipeline=active_learning_experiment_credit,
+    run_config=run_config,
+)
