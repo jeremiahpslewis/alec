@@ -19,5 +19,4 @@ tasks:
     command: ["dagster", "pipeline", "execute", "-f", "main.py", "--preset", "unittest"]
 tests:
   - name: test-alec
-    disabled: true
     command: ["dagster", "pipeline", "execute", "-f", "main.py", "--preset", "unittest"]
