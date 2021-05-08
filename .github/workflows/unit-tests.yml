@@ -22,3 +22,5 @@ jobs:
       - name: Run Unit Tests
         run: |
           garden test -n test-alec --force
+        env:
+          GARDEN_LOGGER_TYPE: basic
