@@ -81,5 +81,5 @@ end
 @df business_cycle_df plot!(:application_date, :business_cycle_default_risk)
 
 @chain portfolio_df begin
-    write_parquet("/app/portfolio_df.parquet", _)
+    write_parquet("/app/synthetic_data.parquet", _)
 end

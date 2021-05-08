@@ -21,7 +21,7 @@ full_outcome_col_set = ["application_id", "default"]
 
 
 def get_raw_data():
-    raw_df = pd.read_parquet("portfolio_df.parquet")
+    raw_df = pd.read_parquet("synthetic_data.parquet")
     return raw_df
 
 
@@ -348,3 +348,8 @@ def active_learning_experiment_credit():
         )
 
         outcome_df = observe_outcomes(portfolio_df, outcome_df)
+
+    
+    application_df.to_parquet("application_df.parquet")
+    portfolio_df.to_parquet("portfolio_df.parquet")
+    outcome_df.to_parquet("outcome_df.parquet")    

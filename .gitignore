@@ -133,4 +133,4 @@ dmypy.json
 
 .DS_Store
 
-!model-orchestrator/src/portfolio_df.parquet
+!model-orchestrator/src/synthetic_data.parquet

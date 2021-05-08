@@ -12,7 +12,7 @@ tasks:
     env:
       JULIA_PROJECT: "@."
     artifacts:
-      - source: /app/portfolio_df.parquet
+      - source: /app/synthetic_data.parquet
         target: synthetic-data
 services:
   - name: julia-server

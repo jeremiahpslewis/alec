@@ -17,6 +17,9 @@ tasks:
   - name: run-alec
     disabled: true
     command: ["dagster", "pipeline", "execute", "-f", "main.py", "--preset", "unittest"]
+    artifacts:
+      - source: /app/*.parquet
+        target: results
 tests:
   - name: test-alec
     command: ["dagster", "pipeline", "execute", "-f", "main.py", "--preset", "unittest"]
