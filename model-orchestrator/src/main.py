@@ -287,7 +287,10 @@ def observe_outcomes(
 
 @solid
 def export_results(
-    application_df: pd.DataFrame, portfolio_df: pd.DataFrame, outcome_df: pd.DataFrame
+    context,
+    application_df: pd.DataFrame,
+    portfolio_df: pd.DataFrame,
+    outcome_df: pd.DataFrame,
 ):
     application_df.to_parquet("application_df.parquet")
     portfolio_df.to_parquet("portfolio_df.parquet")
