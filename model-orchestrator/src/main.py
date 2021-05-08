@@ -1,6 +1,5 @@
 import pandas as pd
-from dagster import (ModeDefinition, PresetDefinition, execute_pipeline,
-                     pipeline, solid)
+from dagster import ModeDefinition, PresetDefinition, execute_pipeline, pipeline, solid
 from sklearn import linear_model
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
@@ -286,6 +285,15 @@ def observe_outcomes(
     return outcome_df.append(new_loan_outcomes[full_outcome_col_set])
 
 
+@solid
+def export_results(
+    application_df: pd.DataFrame, portfolio_df: pd.DataFrame, outcome_df: pd.DataFrame
+):
+    application_df.to_parquet("application_df.parquet")
+    portfolio_df.to_parquet("portfolio_df.parquet")
+    outcome_df.to_parquet("outcome_df.parquet")
+
+
 def var_if_gr_1(i, var):
     if i > 1:
         return f"{var}_{i}"
@@ -349,7 +357,4 @@ def active_learning_experiment_credit():
 
         outcome_df = observe_outcomes(portfolio_df, outcome_df)
 
-    
-    application_df.to_parquet("application_df.parquet")
-    portfolio_df.to_parquet("portfolio_df.parquet")
-    outcome_df.to_parquet("outcome_df.parquet")    
+    export_results(application_df, portfolio_df, outcome_df)
