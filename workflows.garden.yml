@@ -1,0 +1,6 @@
+kind: Workflow
+name: gen-data
+steps:
+  - command: [run, task, generate-synthetic-data, --force]
+  - script: |
+      cp .garden/artifacts/synthetic-data/synthetic_data.parquet model-orchestrator/src/data/

@@ -2,10 +2,7 @@ kind: Module
 type: container
 name: dashboard
 disabled: false
-hotReload:
-  sync:
-  - target: /app
-    source: src
+
 services:
   - name: dash
     ports:
@@ -13,3 +10,8 @@ services:
         containerPort: 8501
     # dependencies:
     #   - generate-synthetic-data
+    devMode:
+      sync:
+        - target: /app
+          source: src
+          mode: two-way

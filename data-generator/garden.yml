@@ -2,9 +2,6 @@ kind: Module
 type: container
 name: generate-synthetic-data
 disabled: true
-hotReload:
-  sync:
-  - target: /app
 tasks:
   - name: generate-synthetic-data
     command: [julia, /app/credit_generator.jl]
@@ -21,3 +18,8 @@ services:
     ports:
       - name: http
         containerPort: 1000
+    devMode:
+      sync:
+        - target: /app
+          source: src
+          mode: two-way

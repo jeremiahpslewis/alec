@@ -1,7 +1,6 @@
 kind: Module
 type: container
 name: model-orchestrator
-disabled: true
 services:
   - name: dagster
     ports:
@@ -12,6 +11,7 @@ services:
     devMode:
       sync:
         - target: /app
+          source: src
           mode: two-way
       
 tasks:
@@ -22,6 +22,7 @@ tasks:
         target: results
 tests:
   - name: test-alec
+    disabled: true
     command: ["dagster", "pipeline", "execute", "-f", "main.py", "--preset", "unittest"]
     artifacts:
       - source: /app/*.parquet

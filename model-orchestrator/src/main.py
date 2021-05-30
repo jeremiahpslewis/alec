@@ -6,32 +6,34 @@ from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 # NOTE: counterfactual_default is defined as default outcome had applicant been granted loan
-metadata = ["application_date", "application_id", "counterfactual_default"]
+run_metadata = ["simulation_id"]
+simulation_metadata = ["application_date", "application_id", "counterfactual_default"]
 X_vars = ["individual_default_risk", "business_cycle_default_risk"]
 y_var = ["default"]
 
-full_application_col_set = [*metadata, *X_vars]
+full_application_col_set = [*run_metadata, *simulation_metadata, *X_vars]
 full_portfolio_col_set = [
+    *run_metadata,
     "application_id",
     "portfolio",
     "credit_granted",
     "funding_probability",
 ]
-full_outcome_col_set = ["application_id", "default"]
+full_outcome_col_set = [*run_metadata, "application_id", "default"]
 
 
-def get_raw_data():
-    raw_df = pd.read_parquet("synthetic_data.parquet")
-
-    # TODO: Remove this line after application date is fixed!!
-    raw_df.loc[:, "application_date"] = raw_df.application_date // 100
-
+def get_raw_data(simulation_id):
+    raw_df = pd.read_parquet("data/synthetic_data.parquet")
+    raw_df = raw_df.loc[raw_df.simulation_id == simulation_id].copy()
+    raw_df.reset_index(inplace=True, drop=True)
     raw_df["counterfactual_default"] = raw_df["default"]
     return raw_df
 
 
-def get_historical_data() -> list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    df = get_raw_data()
+def get_historical_data(
+    simulation_id,
+) -> list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    df = get_raw_data(simulation_id)
     df["portfolio"] = "business"
     df["credit_granted"] = True
     df["funding_probability"] = 1
@@ -41,13 +43,9 @@ def get_historical_data() -> list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         full_application_col_set,
     ].copy()
 
-    hist_portfolio_df = df.loc[
-        df.application_date == 0, full_portfolio_col_set
-    ].copy()
+    hist_portfolio_df = df.loc[df.application_date == 0, full_portfolio_col_set].copy()
 
-    hist_outcome_df = df.loc[
-        df.application_date == 0, full_outcome_col_set
-    ].copy()
+    hist_outcome_df = df.loc[df.application_date == 0, full_outcome_col_set].copy()
 
     return {
         "applications": hist_application_df,
@@ -57,18 +55,24 @@ def get_historical_data() -> list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
 
 @solid
-def get_historical_application_data(_):
-    return get_historical_data()["applications"]
+def get_historical_application_data(context):
+    simulation_id = context.solid_config["simulation_id"]
+
+    return get_historical_data(simulation_id)["applications"]
 
 
 @solid
-def get_historical_portfolio_data(_):
-    return get_historical_data()["portfolio"]
+def get_historical_portfolio_data(context):
+    simulation_id = context.solid_config["simulation_id"]
+
+    return get_historical_data(simulation_id)["portfolio"]
 
 
 @solid
-def get_historical_outcome_data(_):
-    return get_historical_data()["outcomes"]
+def get_historical_outcome_data(context):
+    simulation_id = context.solid_config["simulation_id"]
+
+    return get_historical_data(simulation_id)["outcomes"]
 
 
 @solid
@@ -296,9 +300,11 @@ def export_results(
     portfolio_df: pd.DataFrame,
     outcome_df: pd.DataFrame,
 ):
-    application_df.to_parquet("application_df.parquet")
-    portfolio_df.to_parquet("portfolio_df.parquet")
-    outcome_df.to_parquet("outcome_df.parquet")
+    simulation_id = context.solid_config["simulation_id"]
+
+    application_df.to_parquet("data/application_df_{simulation_id}.parquet")
+    portfolio_df.to_parquet("data/portfolio_df_{simulation_id}.parquet")
+    outcome_df.to_parquet("data/outcome_df_{simulation_id}.parquet")
 
 
 def var_if_gr_1(i, var):
@@ -308,8 +314,8 @@ def var_if_gr_1(i, var):
         return var
 
 
-run_config = {
-    "solids": {
+def run_simulation(simulation_id):
+    solids_dict = {
         var_if_gr_1(i + 1, var): {"config": {"application_date": i + 1}}
         for i in range(10)
         for var in [
@@ -319,49 +325,81 @@ run_config = {
             "observe_outcomes",
         ]
     }
-}
+
+    solids_dict.append(
+        {
+            var: {"config": {"simulation_id": simulation_id}}
+            for var in [
+                "get_historical_application_data",
+                "get_historical_portfolio_data",
+                "get_historical_outcome_data",
+            ]
+        }
+    )
+
+    run_config = {
+        "solids": {
+            var_if_gr_1(i + 1, var): {"config": {"application_date": i + 1}}
+            for i in range(10)
+            for var in [
+                "choose_business_portfolio",
+                "get_applications",
+                "choose_research_portfolio",
+                "observe_outcomes",
+                "export_results",
+            ]
+        }
+    }
+
+    @pipeline(
+        mode_defs=[ModeDefinition("unittest")],
+        preset_defs=[
+            PresetDefinition(
+                "unittest",
+                run_config=run_config,
+                mode="unittest",
+            )
+        ],
+    )
+    def active_learning_experiment_credit():
+        application_df = get_historical_application_data()
+        portfolio_df = get_historical_portfolio_data()
+        outcome_df = get_historical_outcome_data()
+        model_pipeline = get_model_pipeline()
+        active_learning_pipeline = get_active_learning_pipeline()
+
+        for t in range(10):
+
+            trained_model = train_model(
+                application_df,
+                portfolio_df,
+                outcome_df,
+                model_pipeline,
+            )
+
+            application_df = get_applications(application_df)
+
+            portfolio_df = choose_business_portfolio(
+                application_df, portfolio_df, trained_model
+            )
+
+            portfolio_df = choose_research_portfolio(
+                application_df,
+                portfolio_df,
+                outcome_df,
+                trained_model,
+                active_learning_pipeline,
+            )
+
+            outcome_df = observe_outcomes(portfolio_df, outcome_df)
+
+        export_results(application_df, portfolio_df, outcome_df)
+
+    execute_pipeline(active_learning_experiment_credit)
 
 
-@pipeline(
-    mode_defs=[ModeDefinition("unittest")],
-    preset_defs=[
-        PresetDefinition(
-            "unittest",
-            run_config=run_config,
-            mode="unittest",
-        )
-    ],
-)
-def active_learning_experiment_credit():
-    application_df = get_historical_application_data()
-    portfolio_df = get_historical_portfolio_data()
-    outcome_df = get_historical_outcome_data()
-    model_pipeline = get_model_pipeline()
-    active_learning_pipeline = get_active_learning_pipeline()
+if __name__ == "__main__":
+    df = pd.read_parquet("synthetic_data.parquet")
 
-    for t in range(10):
-
-        trained_model = train_model(
-            application_df,
-            portfolio_df,
-            outcome_df,
-            model_pipeline,
-        )
-
-        application_df = get_applications(application_df)
-
-        portfolio_df = choose_business_portfolio(
-            application_df, portfolio_df, trained_model
-        )
-
-        portfolio_df = choose_research_portfolio(
-            application_df,
-            portfolio_df,
-            outcome_df,
-            trained_model,
-            active_learning_pipeline,
-        )
-
-        outcome_df = observe_outcomes(portfolio_df, outcome_df)
-
-    export_results(application_df, portfolio_df, outcome_df)
+    for simulation_id in df.simulation_id.unique().tolist():
+        run_simulation(simulation_id)
