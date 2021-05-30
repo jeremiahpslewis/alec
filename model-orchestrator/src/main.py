@@ -302,9 +302,9 @@ def export_results(
 ):
     simulation_id = context.solid_config["simulation_id"]
 
-    application_df.to_parquet("data/application_df_{simulation_id}.parquet")
-    portfolio_df.to_parquet("data/portfolio_df_{simulation_id}.parquet")
-    outcome_df.to_parquet("data/outcome_df_{simulation_id}.parquet")
+    application_df.to_parquet(f"data/applications/{simulation_id}.parquet")
+    portfolio_df.to_parquet(f"data/portfolios/{simulation_id}.parquet")
+    outcome_df.to_parquet(f"data/outcomes/{simulation_id}.parquet")
 
 
 def var_if_gr_1(i, var):
