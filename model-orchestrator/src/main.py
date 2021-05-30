@@ -5,7 +5,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-metadata = ["application_date", "application_id"]
+# NOTE: counterfactual_default is defined as default outcome had applicant been granted loan
+metadata = ["application_date", "application_id", "counterfactual_default"]
 X_vars = ["individual_default_risk", "business_cycle_default_risk"]
 y_var = ["default"]
 
@@ -21,28 +22,31 @@ full_outcome_col_set = ["application_id", "default"]
 
 def get_raw_data():
     raw_df = pd.read_parquet("synthetic_data.parquet")
+
+    # TODO: Remove this line after application date is fixed!!
+    raw_df.loc[:, "application_date"] = raw_df.application_date // 100
+
+    raw_df["counterfactual_default"] = raw_df["default"]
     return raw_df
 
 
-def get_historical_data(
-    epoch_start: int = 0,
-) -> list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def get_historical_data() -> list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     df = get_raw_data()
     df["portfolio"] = "business"
     df["credit_granted"] = True
     df["funding_probability"] = 1
 
     hist_application_df = df.loc[
-        df.application_date < (epoch_start + 1) * 100,
+        df.application_date == 0,
         full_application_col_set,
     ].copy()
 
     hist_portfolio_df = df.loc[
-        df.application_date < (epoch_start + 1) * 100, full_portfolio_col_set
+        df.application_date == 0, full_portfolio_col_set
     ].copy()
 
     hist_outcome_df = df.loc[
-        df.application_date < (epoch_start + 1) * 100, full_outcome_col_set
+        df.application_date == 0, full_outcome_col_set
     ].copy()
 
     return {
@@ -154,18 +158,18 @@ def train_model(
     return model_pipeline
 
 
-@solid(config_schema={"epoch": int})
+@solid(config_schema={"application_date": int})
 def get_applications(context, application_df) -> pd.DataFrame:
     """
     gets applications for new loans from customers
     """
 
-    epoch = context.solid_config["epoch"]
+    application_date = context.solid_config["application_date"]
 
     raw_application_df = get_raw_data()
     new_application_df = raw_application_df.loc[
-        (raw_application_df.application_date >= epoch * 100)
-        & (raw_application_df.application_date < (epoch + 1) * 100)
+        (raw_application_df.application_date >= application_date)
+        & (raw_application_df.application_date < application_date + 1)
     ].copy()
     new_application_df.reset_index(inplace=True, drop=True)
     return application_df.append(
@@ -173,7 +177,7 @@ def get_applications(context, application_df) -> pd.DataFrame:
     ).reset_index(drop=True)
 
 
-@solid(config_schema={"epoch": int})
+@solid(config_schema={"application_date": int})
 def choose_business_portfolio(
     context,
     application_df: pd.DataFrame,
@@ -188,18 +192,18 @@ def choose_business_portfolio(
     model: machine learning model (pipeline) which can be applied to applications, based on training data
     """
 
-    epoch = context.solid_config["epoch"]
+    application_date = context.solid_config["application_date"]
 
     current_application_df = (
         application_df.loc[
-            (application_df.application_date >= epoch * 100)
-            & (application_df.application_date < (epoch + 1) * 100)
+            (application_df.application_date >= application_date)
+            & (application_df.application_date < application_date + 1)
         ]
         .copy()
         .reset_index(drop=True)
     )
 
-    # NOTE: No applications this epoch!
+    # NOTE: No applications this application_date!
     if current_application_df.shape[0] == 0:
         return portfolio_df
 
@@ -227,7 +231,7 @@ def choose_business_portfolio(
     return portfolio_df.append(business_portfolio_df[full_portfolio_col_set])
 
 
-@solid(config_schema={"epoch": int})
+@solid(config_schema={"application_date": int})
 def choose_research_portfolio(
     context,
     application_df: pd.DataFrame,
@@ -243,15 +247,15 @@ def choose_research_portfolio(
     business_portfolio: {"application_id", "credit_granted"} as pd.DataFrame
     """
 
-    epoch = context.solid_config["epoch"]
+    application_date = context.solid_config["application_date"]
 
     unfunded_applications = application_df[
         ~application_df.application_id.isin(portfolio_df.application_id.tolist())
-        & (application_df.application_date >= epoch * 100)
-        & (application_df.application_date < (epoch + 1) * 100)
+        & (application_df.application_date >= application_date)
+        & (application_df.application_date < application_date + 1)
     ]
 
-    # NOTE: No applications this epoch!
+    # NOTE: No applications this application_date!
     if unfunded_applications.shape[0] == 0:
         return portfolio_df
 
@@ -274,12 +278,12 @@ def observe_outcomes(
     """
     Observe outcomes to granted credit.
     """
-    epoch = context.solid_config["epoch"]
+    application_date = context.solid_config["application_date"]
 
     raw_data = get_raw_data()
     new_loan_outcomes = raw_data.loc[
-        (raw_data.application_date >= epoch * 100)
-        & (raw_data.application_date < (epoch + 1) * 100)
+        (raw_data.application_date >= application_date)
+        & (raw_data.application_date < application_date + 1)
         & (raw_data.application_id.isin(portfolio_df.application_id.tolist()))
     ].copy()
     return outcome_df.append(new_loan_outcomes[full_outcome_col_set])
@@ -306,7 +310,7 @@ def var_if_gr_1(i, var):
 
 run_config = {
     "solids": {
-        var_if_gr_1(i + 1, var): {"config": {"epoch": i + 1}}
+        var_if_gr_1(i + 1, var): {"config": {"application_date": i + 1}}
         for i in range(10)
         for var in [
             "choose_business_portfolio",
