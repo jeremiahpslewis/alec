@@ -19,9 +19,15 @@ services:
 tasks:
   - name: run-alec
     command: ["python", "main.py"]
+    timeout:
+      100000
     artifacts:
-      - source: /app/data/*.parquet
-        target: results
+      - source: /app/data/applications/*.parquet
+        target: applications
+      - source: /app/data/portfolios/*.parquet
+        target: portfolios
+      - source: /app/data/outcomes/*.parquet
+        target: outcomes
 tests:
   - name: test-alec
     disabled: true

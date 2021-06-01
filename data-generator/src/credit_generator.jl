@@ -9,7 +9,7 @@ using DataFrames
 using Chain
 using UUIDs
 
-n_applications = 5000
+n_applications = 500
 n_simulations = 500
 
 function generate_synthetic_data(n_applications)
