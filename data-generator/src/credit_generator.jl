@@ -72,6 +72,10 @@ function generate_synthetic_data(n_applications)
 
     portfolio_df[!, :application_date] = portfolio_df[!, :application_date] .÷ 100
 
+    @chain portfolio_df begin
+        write_parquet("/app/synthetic_data_$(simulation_id).parquet", _)
+    end
+
     return portfolio_df
 end
 
@@ -79,9 +83,7 @@ function generate_synthetic_data(n_applications, n_simulations)
 
     df = DataFrame()
     for i = 1:n_simulations
-        @chain generate_synthetic_data(n_applications) begin
-            write_parquet("/app/synthetic_data_$(string(UUIDs.uuid4())).parquet", _)
-        end
+        generate_synthetic_data(n_applications)
     end
 end
 

@@ -149,6 +149,7 @@ def train_model(
     assert training_df.portfolio.notnull().sum() == portfolio_df.shape[0]
     assert training_df.default.notnull().sum() == outcome_df.shape[0]
     assert training_df.application_id.duplicated().sum() == 0
+    assert training_df.shape[0] > 0
 
     # NOTE: Currently all cases without observed default are dropped for ML model!
 
