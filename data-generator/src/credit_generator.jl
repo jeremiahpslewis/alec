@@ -9,8 +9,8 @@ using DataFrames
 using Chain
 using UUIDs
 
-n_applications = 1000
-n_simulations = 100
+n_applications = 5000
+n_simulations = 500
 
 function generate_synthetic_data(n_applications)
     # Delete this line
@@ -19,7 +19,6 @@ function generate_synthetic_data(n_applications)
     @model function individual_attributes()
         income_monthly ~ Gamma(10, 150)
         individual_default_risk ~ Beta(2, 30)
-        application_date ~ TruncatedNormal(500, 200, 1, 365 * 2)
     end
 
     # Assume business-cycle risk is a function of date and white noise
@@ -35,18 +34,16 @@ function generate_synthetic_data(n_applications)
     business_cycle_t(t) = 0.5 * sin((t - shift) / (period / (2 * pi))) + 0.5
     # business_cycle_with_noise = business_cycle_t.(1:(365*2)) .* rand(TruncatedNormal(0.95, 0.1, 0.01, 1), 365*2)
     business_cycle_with_noise =
-        business_cycle_t.(1:(365*2)) .^ rand(Truncated(Poisson(5), 1, 5), 365 * 2)
+        business_cycle_t.((1:10) * 365) .^ rand(Truncated(Poisson(5), 1, 5), 10)
     business_cycle_default_risk = (rand(Uniform(0.1, 0.5)) .* business_cycle_with_noise)
-    # plot(1:(365*2), business_cycle_risk)
+    # plot(1:10, business_cycle_risk)
 
     business_cycle_df = DataFrame(
-        "application_date" => 1:(365*2),
+        "application_date" => 1:10,
         "business_cycle_default_risk" => business_cycle_default_risk,
     )
     individuals_df = DataFrame(sample(individual_attributes(), NUTS(1000, 0.65), n_applications))
-    individuals_df[!, :application_date] .=
-        round.(individuals_df[!, :application_date], digits = 0)
-    individuals_df
+    individuals_df[!, :application_date] .= repeat(1:10, Int(ceil(n_applications / 10)))[1:n_applications]
 
     portfolio_df = leftjoin(
         individuals_df[!, [:application_date, :individual_default_risk]],
@@ -82,14 +79,13 @@ function generate_synthetic_data(n_applications, n_simulations)
 
     df = DataFrame()
     for i = 1:n_simulations
-        append!(df, generate_synthetic_data(n_applications))
+        @chain generate_synthetic_data(n_applications) begin
+            write_parquet("/app/synthetic_data_$(string(UUIDs.uuid4())).parquet", _)
+        end
     end
-    return df
 end
 
-@chain generate_synthetic_data(n_applications, n_simulations) begin
-    write_parquet("/app/synthetic_data.parquet", _)
-end
+generate_synthetic_data(n_applications, n_simulations)
 
 # @df portfolio_df boxplot(:default, :total_default_risk)
 

@@ -9,7 +9,7 @@ tasks:
     env:
       JULIA_PROJECT: "@."
     artifacts:
-      - source: /app/synthetic_data.parquet
+      - source: /app/*.parquet
         target: synthetic-data
 services:
   - name: julia-server

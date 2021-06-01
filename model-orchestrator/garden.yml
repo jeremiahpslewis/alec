@@ -8,6 +8,8 @@ services:
         containerPort: 3000
     dependencies:
       - generate-synthetic-data
+    limits:
+      memory: 10240
     devMode:
       sync:
         - target: /app
@@ -16,9 +18,9 @@ services:
       
 tasks:
   - name: run-alec
-    command: ["dagster", "pipeline", "execute", "-f", "main.py", "--preset", "unittest"]
+    command: ["python", "main.py"]
     artifacts:
-      - source: /app/*.parquet
+      - source: /app/data/*.parquet
         target: results
 tests:
   - name: test-alec

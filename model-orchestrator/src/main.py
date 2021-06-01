@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 from dagster import ModeDefinition, PresetDefinition, execute_pipeline, pipeline, solid
 from sklearn import linear_model
@@ -23,7 +25,7 @@ full_outcome_col_set = [*run_metadata, "application_id", "default"]
 
 
 def get_raw_data(simulation_id):
-    raw_df = pd.read_parquet("data/synthetic_data.parquet")
+    raw_df = pd.read_parquet(f"data/synthetic-data/synthetic_data_{simulation_id}.parquet")
     raw_df = raw_df.loc[raw_df.simulation_id == simulation_id].copy()
     raw_df.reset_index(inplace=True, drop=True)
     raw_df["counterfactual_default"] = raw_df["default"]
@@ -54,21 +56,21 @@ def get_historical_data(
     }
 
 
-@solid
+@solid(config_schema={"simulation_id": str})
 def get_historical_application_data(context):
     simulation_id = context.solid_config["simulation_id"]
 
     return get_historical_data(simulation_id)["applications"]
 
 
-@solid
+@solid(config_schema={"simulation_id": str})
 def get_historical_portfolio_data(context):
     simulation_id = context.solid_config["simulation_id"]
 
     return get_historical_data(simulation_id)["portfolio"]
 
 
-@solid
+@solid(config_schema={"simulation_id": str})
 def get_historical_outcome_data(context):
     simulation_id = context.solid_config["simulation_id"]
 
@@ -152,17 +154,17 @@ def train_model(
 
     training_df = training_df.loc[training_df.default.notnull()].copy()
 
-    try:
-        model_pipeline.fit(
-            training_df.loc[:, X_vars], training_df["default"].astype("int")
-        )
-    except Exception:
-        training_df.to_parquet(f"debug_{training_df.application_date.max()}.parquet")
+    # try:
+    model_pipeline.fit(
+        training_df.loc[:, X_vars], training_df["default"].astype("int")
+    )
+    # except Exception:
+    #     training_df.to_parquet(f"debug_{training_df.application_date.max()}.parquet")
 
     return model_pipeline
 
 
-@solid(config_schema={"application_date": int})
+@solid(config_schema={"application_date": int, "simulation_id": str})
 def get_applications(context, application_df) -> pd.DataFrame:
     """
     gets applications for new loans from customers
@@ -170,7 +172,7 @@ def get_applications(context, application_df) -> pd.DataFrame:
 
     application_date = context.solid_config["application_date"]
 
-    raw_application_df = get_raw_data()
+    raw_application_df = get_raw_data(simulation_id)
     new_application_df = raw_application_df.loc[
         (raw_application_df.application_date >= application_date)
         & (raw_application_df.application_date < application_date + 1)
@@ -224,7 +226,7 @@ def choose_business_portfolio(
             current_application_df["est_default_prob"].rank(method="first")
             <= n_loan_budget
         ]
-        .copy()[["application_id"]]
+        .copy()[["application_id", "simulation_id"]]
         .reset_index(drop=True)
     )
 
@@ -263,8 +265,8 @@ def choose_research_portfolio(
     if unfunded_applications.shape[0] == 0:
         return portfolio_df
 
-    research_portfolio_df = unfunded_applications.sample(n_research_budget)[
-        ["application_id"]
+    research_portfolio_df = unfunded_applications.sample(min(n_research_budget, unfunded_applications.shape[0]))[
+        ["application_id", "simulation_id"]
     ].reset_index(drop=True)
 
     research_portfolio_df["portfolio"] = "research"
@@ -275,7 +277,7 @@ def choose_research_portfolio(
     return portfolio_df.append(research_portfolio_df[full_portfolio_col_set])
 
 
-@solid
+@solid(config_schema={"application_date": int, "simulation_id": str})
 def observe_outcomes(
     context, portfolio_df: pd.DataFrame, outcome_df: pd.DataFrame
 ) -> pd.DataFrame:
@@ -284,7 +286,7 @@ def observe_outcomes(
     """
     application_date = context.solid_config["application_date"]
 
-    raw_data = get_raw_data()
+    raw_data = get_raw_data(simulation_id)
     new_loan_outcomes = raw_data.loc[
         (raw_data.application_date >= application_date)
         & (raw_data.application_date < application_date + 1)
@@ -293,7 +295,7 @@ def observe_outcomes(
     return outcome_df.append(new_loan_outcomes[full_outcome_col_set])
 
 
-@solid
+@solid(config_schema={"simulation_id": str})
 def export_results(
     context,
     application_df: pd.DataFrame,
@@ -320,36 +322,36 @@ def run_simulation(simulation_id):
         for i in range(10)
         for var in [
             "choose_business_portfolio",
-            "get_applications",
             "choose_research_portfolio",
-            "observe_outcomes",
         ]
     }
 
-    solids_dict.append(
+    solids_dict.update(
+        {
+            var_if_gr_1(i + 1, var): {
+                "config": {"application_date": i + 1, "simulation_id": simulation_id}
+            }
+            for i in range(10)
+            for var in [
+                "get_applications",
+                "observe_outcomes",
+            ]
+        }
+    )
+
+    solids_dict.update(
         {
             var: {"config": {"simulation_id": simulation_id}}
             for var in [
                 "get_historical_application_data",
                 "get_historical_portfolio_data",
                 "get_historical_outcome_data",
+                "export_results",
             ]
         }
     )
 
-    run_config = {
-        "solids": {
-            var_if_gr_1(i + 1, var): {"config": {"application_date": i + 1}}
-            for i in range(10)
-            for var in [
-                "choose_business_portfolio",
-                "get_applications",
-                "choose_research_portfolio",
-                "observe_outcomes",
-                "export_results",
-            ]
-        }
-    }
+    run_config = {"solids": solids_dict}
 
     @pipeline(
         mode_defs=[ModeDefinition("unittest")],
@@ -395,11 +397,14 @@ def run_simulation(simulation_id):
 
         export_results(application_df, portfolio_df, outcome_df)
 
-    execute_pipeline(active_learning_experiment_credit)
+    execute_pipeline(active_learning_experiment_credit, run_config=run_config)
 
 
 if __name__ == "__main__":
-    df = pd.read_parquet("synthetic_data.parquet")
+    for d in ["data/applications", "data/portfolios", "data/outcomes"]:
+        os.mkdir(d)
+    simulation_ids = [f for f in os.listdir("data/synthetic-data") if not f.startswith('.')]
+    simulation_ids = [simulation_id.split("_")[2].split(".")[0] for simulation_id in simulation_ids]
 
-    for simulation_id in df.simulation_id.unique().tolist():
+    for simulation_id in simulation_ids:
         run_simulation(simulation_id)

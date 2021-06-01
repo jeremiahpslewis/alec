@@ -1,6 +1,9 @@
 kind: Workflow
 name: gen-data
 steps:
+  - script: |
+      rm -rf .garden/artifacts/synthetic-data/
   - command: [run, task, generate-synthetic-data, --force]
   - script: |
-      cp .garden/artifacts/synthetic-data/synthetic_data.parquet model-orchestrator/src/data/
+      rm -rf model-orchestrator/src/data/synthetic-data/
+      mv .garden/artifacts/synthetic-data/ model-orchestrator/src/data/
