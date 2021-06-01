@@ -23,6 +23,7 @@ steps:
   - command: [run, task, run-alec, --force]
   - script: |
       rm -rf dashboard/src/data/
+      mkdir dashboard/src/data
       mv .garden/artifacts/applications dashboard/src/data/
       mv .garden/artifacts/portfolios dashboard/src/data/
       mv .garden/artifacts/outcomes dashboard/src/data/
