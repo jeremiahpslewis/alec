@@ -70,7 +70,7 @@ function generate_synthetic_data(n_applications)
     simulation_id = string(UUIDs.uuid4())
     transform!(portfolio_df, :application_id => (v -> simulation_id) => :simulation_id)
 
-    portfolio_df[!, :application_date] = portfolio_df[!, :application_date] .÷ 100
+    portfolio_df[!, :application_date] = portfolio_df[!, :application_date] .+ 2020
 
     @chain portfolio_df begin
         write_parquet("/app/synthetic_data_$(simulation_id).parquet", _)

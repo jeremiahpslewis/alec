@@ -40,14 +40,15 @@ def get_historical_data(
     df["credit_granted"] = True
     df["funding_probability"] = 1
 
-    hist_application_df = df.loc[
-        df.application_date == 0,
+    df = df.loc[df.application_date == df.application_date.min()].copy()
+
+    hist_application_df = df.loc[:,
         full_application_col_set,
     ].copy()
 
-    hist_portfolio_df = df.loc[df.application_date == 0, full_portfolio_col_set].copy()
+    hist_portfolio_df = df.loc[:, full_portfolio_col_set].copy()
 
-    hist_outcome_df = df.loc[df.application_date == 0, full_outcome_col_set].copy()
+    hist_outcome_df = df.loc[:, full_outcome_col_set].copy()
 
     return {
         "applications": hist_application_df,
@@ -190,7 +191,7 @@ def choose_business_portfolio(
     application_df: pd.DataFrame,
     portfolio_df: pd.DataFrame,
     model_pipeline: Pipeline,
-    n_loan_budget: int = 100,
+    application_acceptance_rate: float = 0.1,
 ) -> pd.DataFrame:
     """
     Decide whom to grant loans to (for profit)
@@ -225,7 +226,7 @@ def choose_business_portfolio(
     business_portfolio_df = (
         current_application_df.loc[
             current_application_df["est_default_prob"].rank(method="first")
-            <= n_loan_budget
+            <= int(current_application_df.shape[0] * application_acceptance_rate)
         ]
         .copy()[["application_id", "simulation_id"]]
         .reset_index(drop=True)
@@ -319,7 +320,7 @@ def var_if_gr_1(i, var):
 
 def run_simulation(simulation_id):
     solids_dict = {
-        var_if_gr_1(i + 1, var): {"config": {"application_date": i + 1}}
+        var_if_gr_1(i + 1, var): {"config": {"application_date": range(2021, 2031)[i]}
         for i in range(10)
         for var in [
             "choose_business_portfolio",
@@ -330,7 +331,7 @@ def run_simulation(simulation_id):
     solids_dict.update(
         {
             var_if_gr_1(i + 1, var): {
-                "config": {"application_date": i + 1, "simulation_id": simulation_id}
+                "config": {"application_date": range(2021, 2031)[i], "simulation_id": simulation_id}
             }
             for i in range(10)
             for var in [
