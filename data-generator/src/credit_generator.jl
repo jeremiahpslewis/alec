@@ -9,8 +9,10 @@ using DataFrames
 using Chain
 using UUIDs
 
-n_applications = 500
 n_simulations = 500
+n_periods = 11
+n_applications_per_period = 50
+n_applications = n_periods * n_applications_per_period
 
 function generate_synthetic_data(n_applications)
     # Delete this line
@@ -34,16 +36,16 @@ function generate_synthetic_data(n_applications)
     business_cycle_t(t) = 0.5 * sin((t - shift) / (period / (2 * pi))) + 0.5
     # business_cycle_with_noise = business_cycle_t.(1:(365*2)) .* rand(TruncatedNormal(0.95, 0.1, 0.01, 1), 365*2)
     business_cycle_with_noise =
-        business_cycle_t.((1:10) * 365) .^ rand(Truncated(Poisson(5), 1, 5), 10)
+        business_cycle_t.((1:n_periods) * 365) .^ rand(Truncated(Poisson(5), 1, 5), n_periods)
     business_cycle_default_risk = (rand(Uniform(0.1, 0.5)) .* business_cycle_with_noise)
     # plot(1:10, business_cycle_risk)
 
     business_cycle_df = DataFrame(
-        "application_date" => 1:10,
+        "application_date" => 1:n_periods,
         "business_cycle_default_risk" => business_cycle_default_risk,
     )
     individuals_df = DataFrame(sample(individual_attributes(), NUTS(1000, 0.65), n_applications))
-    individuals_df[!, :application_date] .= repeat(1:10, Int(ceil(n_applications / 10)))[1:n_applications]
+    individuals_df[!, :application_date] .= repeat(1:n_periods, n_applications_per_period)
 
     portfolio_df = leftjoin(
         individuals_df[!, [:application_date, :individual_default_risk]],
@@ -70,7 +72,7 @@ function generate_synthetic_data(n_applications)
     simulation_id = string(UUIDs.uuid4())
     transform!(portfolio_df, :application_id => (v -> simulation_id) => :simulation_id)
 
-    portfolio_df[!, :application_date] = portfolio_df[!, :application_date] .+ 2020
+    portfolio_df[!, :application_date] = portfolio_df[!, :application_date] .+ 2019
 
     @chain portfolio_df begin
         write_parquet("/app/synthetic_data_$(simulation_id).parquet", _)

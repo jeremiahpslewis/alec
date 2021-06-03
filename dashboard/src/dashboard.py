@@ -6,9 +6,15 @@ import streamlit as st
 
 st.title("ALEC: Active Learning Experiment Credit")
 
-simulation_ids_1 = pd.Series([f.split(".")[0] for f in os.listdir("data/applications") if not f.startswith('.')])
-simulation_ids_2 = pd.Series([f.split(".")[0] for f in os.listdir("data/outcomes") if not f.startswith('.')])
-simulation_ids_3 = pd.Series([f.split(".")[0] for f in os.listdir("data/portfolios") if not f.startswith('.')])
+simulation_ids_1 = pd.Series(
+    [f.split(".")[0] for f in os.listdir("data/applications") if not f.startswith(".")]
+)
+simulation_ids_2 = pd.Series(
+    [f.split(".")[0] for f in os.listdir("data/outcomes") if not f.startswith(".")]
+)
+simulation_ids_3 = pd.Series(
+    [f.split(".")[0] for f in os.listdir("data/portfolios") if not f.startswith(".")]
+)
 
 simulation_ids = simulation_ids_1.append(simulation_ids_2).append(simulation_ids_3)
 
@@ -32,7 +38,9 @@ for simulation_id in simulation_ids:
 
     df.portfolio = df.portfolio.fillna("rejected_application")
 
-    df_summary = df.groupby(["simulation_id", "application_date", "portfolio"]).counterfactual_default.mean()
+    df_summary = df.groupby(
+        ["simulation_id", "application_date", "portfolio"]
+    ).counterfactual_default.mean()
     df_summary = df_summary.reset_index()
 
     df_summary_full = df_summary_full.append(df_summary)
