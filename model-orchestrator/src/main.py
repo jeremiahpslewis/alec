@@ -429,6 +429,10 @@ def run_simulation(simulation_id):
 
 if __name__ == "__main__":
     for d in ["data/applications", "data/portfolios", "data/outcomes"]:
+        try:
+            os.rmdir(d)
+        except:
+            pass
         os.mkdir(d)
     simulation_ids = [
         f for f in os.listdir("data/synthetic-data") if not f.startswith(".")

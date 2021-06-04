@@ -18,9 +18,10 @@ steps:
       rm -rf .garden/artifacts/outcomes/
   - command: [run, task, generate-synthetic-data, --force]
   - script: |
-      rm -rf model-orchestrator/src/data/synthetic-data/
+      rm -rf model-orchestrator/src/data/
+      mkdir model-orchestrator/src/data/
       mv .garden/artifacts/synthetic-data/ model-orchestrator/src/data/
-  - command: [run, task, run-alec, --force]
+  - command: [run, task, run-alec, --force, --force-build]
   - script: |
       rm -rf dashboard/src/data/
       mkdir dashboard/src/data
