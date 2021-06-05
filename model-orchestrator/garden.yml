@@ -28,6 +28,8 @@ tasks:
         target: portfolios
       - source: /app/data/outcomes/*.parquet
         target: outcomes
+      - source: /app/data/scenarios/*.parquet
+        target: scenarios
 tests:
   - name: test-alec
     disabled: true

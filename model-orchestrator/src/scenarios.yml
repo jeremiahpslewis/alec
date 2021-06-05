@@ -1,0 +1,21 @@
+scenarios:
+  - name: s1
+    application_acceptance_rate: 0.1
+    business_to_research_ratio: 0
+    active_learning_spec: random
+    ml_model_spec: 1
+  - name: s2
+    application_acceptance_rate: 0.1
+    business_to_research_ratio: 1
+    active_learning_spec: random
+    ml_model_spec: 1
+  - name: s3
+    application_acceptance_rate: 0.1
+    business_to_research_ratio: 2
+    active_learning_spec: random
+    ml_model_spec: 1
+  - name: s3
+    application_acceptance_rate: 0.1
+    business_to_research_ratio: 10
+    active_learning_spec: random
+    ml_model_spec: 1
