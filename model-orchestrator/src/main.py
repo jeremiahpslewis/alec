@@ -105,7 +105,9 @@ def get_model_pipeline(context) -> Pipeline:
     scenario_name = context.solid_config["scenario_name"]
     scenario_df = get_scenario_df()
 
-    ml_model_spec = scenario_df.loc[scenario_df.name == scenario_name, "ml_model_spec"].iloc[0]
+    ml_model_spec = scenario_df.loc[
+        scenario_df.name == scenario_name, "ml_model_spec"
+    ].iloc[0]
 
     if ml_model_spec == 1:
         column_trans = ColumnTransformer(
@@ -134,7 +136,9 @@ def get_active_learning_pipeline(context) -> Pipeline:
     scenario_name = context.solid_config["scenario_name"]
     scenario_df = get_scenario_df()
 
-    active_learning_spec = scenario_df.loc[scenario_df.name == scenario_name, "active_learning_spec"].iloc[0]
+    active_learning_spec = scenario_df.loc[
+        scenario_df.name == scenario_name, "active_learning_spec"
+    ].iloc[0]
 
     if active_learning_spec == 1:
         column_trans = ColumnTransformer(
@@ -246,8 +250,10 @@ def choose_business_portfolio(
     scenario_name = context.solid_config["scenario_name"]
     scenario_df = get_scenario_df()
 
-    application_acceptance_rate = scenario_df.loc[scenario_df.name == scenario_name, "application_acceptance_rate"].iloc[0]
-    
+    application_acceptance_rate = scenario_df.loc[
+        scenario_df.name == scenario_name, "application_acceptance_rate"
+    ].iloc[0]
+
     current_application_df = (
         application_df.loc[
             application_df.application_date == application_df.application_date.max()
@@ -303,7 +309,9 @@ def choose_research_portfolio(
     scenario_name = context.solid_config["scenario_name"]
     scenario_df = get_scenario_df()
 
-    business_to_research_ratio = scenario_df.loc[scenario_df.name == scenario_name, "business_to_research_ratio"].iloc[0]
+    business_to_research_ratio = scenario_df.loc[
+        scenario_df.name == scenario_name, "business_to_research_ratio"
+    ].iloc[0]
 
     unfunded_applications = application_df[
         ~application_df.application_id.isin(portfolio_df.application_id.tolist())
@@ -370,6 +378,7 @@ def export_results(
     outcome_df.to_parquet(f"data/outcomes/{simulation_id}.parquet")
     get_scenario_df().to_parquet(f"data/scenarios/{simulation_id}.parquet")
 
+
 def var_if_gr_1(i, var):
     if i > 1:
         return f"{var}_{i}"
@@ -379,7 +388,12 @@ def var_if_gr_1(i, var):
 
 def run_simulation(simulation_id, scenario_name):
     solids_dict = {
-        var_if_gr_1(i + 1, var): {"config": {"application_date": range(2021, 2031)[i], "scenario_name": scenario_name}}
+        var_if_gr_1(i + 1, var): {
+            "config": {
+                "application_date": range(2021, 2031)[i],
+                "scenario_name": scenario_name,
+            }
+        }
         for i in range(10)
         for var in [
             "choose_business_portfolio",
@@ -387,10 +401,14 @@ def run_simulation(simulation_id, scenario_name):
         ]
     }
 
-    solids_dict.update({
-        "get_model_pipeline": {"config": {"scenario_name": scenario_name}},
-        "get_active_learning_pipeline": {"config": {"scenario_name": scenario_name}},
-    })
+    solids_dict.update(
+        {
+            "get_model_pipeline": {"config": {"scenario_name": scenario_name}},
+            "get_active_learning_pipeline": {
+                "config": {"scenario_name": scenario_name}
+            },
+        }
+    )
 
     solids_dict.update(
         {
@@ -470,7 +488,12 @@ def run_simulation(simulation_id, scenario_name):
 
 
 if __name__ == "__main__":
-    for d in ["data/applications", "data/portfolios", "data/outcomes", "data/scenarios"]:
+    for d in [
+        "data/applications",
+        "data/portfolios",
+        "data/outcomes",
+        "data/scenarios",
+    ]:
         try:
             os.rmdir(d)
         except:

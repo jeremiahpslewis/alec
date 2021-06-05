@@ -19,7 +19,11 @@ simulation_ids_4 = pd.Series(
     [f.split(".")[0] for f in os.listdir("data/scenarios") if not f.startswith(".")]
 )
 
-simulation_ids = simulation_ids_1.append(simulation_ids_2).append(simulation_ids_3).append(simulation_ids_4)
+simulation_ids = (
+    simulation_ids_1.append(simulation_ids_2)
+    .append(simulation_ids_3)
+    .append(simulation_ids_4)
+)
 
 simulation_ids = simulation_ids.value_counts().reset_index()
 simulation_ids = simulation_ids.loc[simulation_ids.loc[:, 0] == 4, "index"].tolist()
