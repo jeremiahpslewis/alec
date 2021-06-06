@@ -9,9 +9,9 @@ using DataFrames
 using Chain
 using UUIDs
 
-n_simulations = 100
-n_periods = 11
-n_applications_per_period = 250
+n_simulations = 25 # 50
+n_periods = 6 # 11
+n_applications_per_period = 100 # 500
 n_applications = n_periods * n_applications_per_period
 
 function generate_synthetic_data(n_applications)

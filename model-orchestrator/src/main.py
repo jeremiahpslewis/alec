@@ -140,7 +140,7 @@ def get_active_learning_pipeline(context) -> Pipeline:
         scenario_df.name == scenario_name, "active_learning_spec"
     ].iloc[0]
 
-    if active_learning_spec == 1:
+    if active_learning_spec == "random":
         column_trans = ColumnTransformer(
             [
                 (
@@ -318,15 +318,6 @@ def choose_research_portfolio(
         & (application_df.application_date == application_df.application_date.max())
     ]
 
-    unfunded_applications = application_df[
-        ~application_df.application_id.isin(portfolio_df.application_id.tolist())
-        & (application_df.application_date == application_df.application_date.max())
-    ]
-    business_loan_count = sum(
-        portfolio_df.application_date == portfolio_df.application_date.max()
-    )
-    n_research_loans = business_loan_count * (1 / business_to_research_ratio)
-
     # NOTE: No applications this application_date!
     if unfunded_applications.shape[0] == 0:
         return portfolio_df
@@ -334,6 +325,10 @@ def choose_research_portfolio(
     # NOTE: If business_to_research_ratio == 0, no research loans are made
     if business_to_research_ratio == 0:
         return portfolio_df
+
+    business_loan_count = sum(application_df.application_id.isin(portfolio_df.application_id.tolist())
+        & (application_df.application_date == application_df.application_date.max()))
+    n_research_loans = int(business_loan_count * (1 / business_to_research_ratio))
 
     research_portfolio_df = unfunded_applications.sample(
         min(n_research_loans, unfunded_applications.shape[0])
@@ -506,5 +501,7 @@ if __name__ == "__main__":
         simulation_id.split("_")[2].split(".")[0] for simulation_id in simulation_ids
     ]
 
-    for simulation_id in simulation_ids:
-        run_simulation(simulation_id)
+    scenario_df = get_scenario_df()
+    for scenario_name in scenario_df.name.tolist():
+        for simulation_id in simulation_ids:
+            run_simulation(simulation_id, scenario_name)
