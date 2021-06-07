@@ -2,7 +2,10 @@ import os
 
 import numpy as np
 import pandas as pd
-from dagster import ModeDefinition, PresetDefinition, execute_pipeline, pipeline, solid
+from dagster import (ModeDefinition, PresetDefinition, execute_pipeline,
+                     pipeline, solid)
+from modAL.models import ActiveLearner
+from modAL.uncertainty import uncertainty_sampling
 from sklearn import linear_model
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
@@ -99,6 +102,28 @@ def get_historical_outcome_data(context):
 
     return get_historical_data(simulation_id)["outcomes"]
 
+def get_feature_pipeline():
+    column_trans = ColumnTransformer(
+    [
+        (
+            "individual_default_risk",
+            StandardScaler(),
+            ["individual_default_risk"],
+        ),
+        (
+            "business_cycle_default_risk",
+            StandardScaler(),
+            ["business_cycle_default_risk"],
+        ),
+    ],
+    remainder="drop",
+    )
+    return column_trans
+
+def get_model_pipeline_object():
+    column_trans = get_feature_pipeline()
+    model_pipeline = make_pipeline(column_trans, linear_model.LogisticRegression())
+    return model_pipeline
 
 @solid(config_schema={"scenario_name": str})
 def get_model_pipeline(context) -> Pipeline:
@@ -108,24 +133,10 @@ def get_model_pipeline(context) -> Pipeline:
     ml_model_spec = scenario_df.loc[
         scenario_df.name == scenario_name, "ml_model_spec"
     ].iloc[0]
+    column_trans = get_feature_pipeline()
 
     if ml_model_spec == 1:
-        column_trans = ColumnTransformer(
-            [
-                (
-                    "individual_default_risk",
-                    StandardScaler(),
-                    ["individual_default_risk"],
-                ),
-                (
-                    "business_cycle_default_risk",
-                    StandardScaler(),
-                    ["business_cycle_default_risk"],
-                ),
-            ],
-            remainder="drop",
-        )
-        model_pipeline = make_pipeline(column_trans, linear_model.LogisticRegression())
+        model_pipeline = get_model_pipeline_object()
     else:
         pass
     return model_pipeline
@@ -139,26 +150,12 @@ def get_active_learning_pipeline(context) -> Pipeline:
     active_learning_spec = scenario_df.loc[
         scenario_df.name == scenario_name, "active_learning_spec"
     ].iloc[0]
+    model_pipeline = get_model_pipeline_object()
 
     if active_learning_spec == "random":
-        column_trans = ColumnTransformer(
-            [
-                (
-                    "individual_default_risk",
-                    StandardScaler(),
-                    ["individual_default_risk"],
-                ),
-                (
-                    "business_cycle_default_risk",
-                    StandardScaler(),
-                    ["business_cycle_default_risk"],
-                ),
-            ],
-            remainder="drop",
-        )
-        model_pipeline = make_pipeline(column_trans, linear_model.LogisticRegression())
-    else:
-        pass
+        return None
+    elif active_learning_spec != "random":
+        return getattr(modAL.uncertainty, active_learning_spec)
     return model_pipeline
 
 
@@ -186,10 +183,10 @@ def train_model(
     )
 
     # NOTE: Check here that rows are not dropped / added!
-    training_df.to_parquet("training_df.parquet")
-    application_df.to_parquet("application_df.parquet")
-    portfolio_df.to_parquet("portfolio_df.parquet")
-    outcome_df.to_parquet("outcome_df.parquet")
+    # training_df.to_parquet("training_df.parquet")
+    # application_df.to_parquet("application_df.parquet")
+    # portfolio_df.to_parquet("portfolio_df.parquet")
+    # outcome_df.to_parquet("outcome_df.parquet")
 
     assert (
         training_df.application_id.duplicated().sum() == 0
@@ -330,9 +327,15 @@ def choose_research_portfolio(
         & (application_df.application_date == application_df.application_date.max()))
     n_research_loans = int(business_loan_count * (1 / business_to_research_ratio))
 
-    research_portfolio_df = unfunded_applications.sample(
-        min(n_research_loans, unfunded_applications.shape[0])
-    )[["application_id", "simulation_id"]].reset_index(drop=True)
+    if active_learning_pipeline is None:
+        research_portfolio_df = unfunded_applications.sample(
+            min(n_research_loans, unfunded_applications.shape[0])
+        )
+    else:
+        research_loan_index = active_learning_pipeline(classifier=model_pipeline, X=unfunded_applications, n_instances=n_research_loans)
+        research_portfolio_df = unfunded_applications.loc[research_loan_index]
+    
+    research_portfolio_df = research_portfolio_df[["application_id", "simulation_id"]].reset_index(drop=True).copy()
 
     research_portfolio_df["portfolio"] = "research"
     research_portfolio_df["credit_granted"] = True

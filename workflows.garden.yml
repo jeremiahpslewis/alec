@@ -16,6 +16,7 @@ steps:
       rm -rf .garden/artifacts/applications/
       rm -rf .garden/artifacts/portfolios/
       rm -rf .garden/artifacts/outcomes/
+      rm -rf .garden/artifacts/scenarios/
   - command: [run, task, generate-synthetic-data, --force]
   - script: |
       rm -rf model-orchestrator/src/data/
@@ -28,4 +29,5 @@ steps:
       mv .garden/artifacts/applications dashboard/src/data/
       mv .garden/artifacts/portfolios dashboard/src/data/
       mv .garden/artifacts/outcomes dashboard/src/data/
+      mv .garden/artifacts/scenarios dashboard/src/data/
         
