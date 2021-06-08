@@ -1,8 +1,4 @@
 [deps]
-AWS = "fbe9abb3-538b-5e4e-ba9e-bc94f4f92ebc"
-AWSCore = "4f1ea46c-232b-54a6-9b17-cc2d0f3e6598"
-AWSS3 = "1c724243-ef5b-51ab-93f4-b0a88ac62a95"
-AWSSDK = "0d499d91-6ae5-5d63-9313-12987b87d5ad"
 Chain = "8be319e6-bccf-4806-a6f7-6fae938471bc"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
