@@ -15,21 +15,17 @@ services:
         - target: /app
           source: src
           mode: two-way
-      
+    env:
+      AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}      
 tasks:
   - name: run-alec
     command: ["python", "main.py"]
     timeout:
       100000
-    artifacts:
-      - source: /app/data/applications/*.parquet
-        target: applications
-      - source: /app/data/portfolios/*.parquet
-        target: portfolios
-      - source: /app/data/outcomes/*.parquet
-        target: outcomes
-      - source: /app/data/scenarios/*.parquet
-        target: scenarios
+    env:
+      AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
 tests:
   - name: test-alec
     disabled: true

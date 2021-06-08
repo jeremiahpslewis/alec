@@ -8,6 +8,8 @@ tasks:
     disabled: true
     env:
       JULIA_PROJECT: "@."
+      AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
     artifacts:
       - source: /app/*.parquet
         target: synthetic-data
@@ -23,3 +25,6 @@ services:
         - target: /app
           source: src
           mode: two-way
+    env:
+      AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}

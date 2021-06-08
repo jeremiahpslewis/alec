@@ -1,5 +1,8 @@
 kind: Project
 name: alec
+variables:
+  AWS_ACCESS_KEY_ID: ${local.env.AWS_ACCESS_KEY_ID}
+  AWS_SECRET_ACCESS_KEY: ${local.env.AWS_SECRET_ACCESS_KEY}
 environments:
   - name: local
 providers:

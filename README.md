@@ -21,3 +21,12 @@ garden exec dagster bash
 ```
 
 
+Note: an AWS account is required to run this project and files must be written to an s3 bucket.
+
+
+The following environment variables must be specified:
+
+```
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+```
