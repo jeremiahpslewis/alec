@@ -14,7 +14,6 @@ n_periods = 11
 n_applications_per_period = 100 # 500
 n_applications = n_periods * n_applications_per_period
 
-aws = global_aws_config(; region="eu-central-1")
 
 function generate_synthetic_data(n_applications)
     # Delete this line
