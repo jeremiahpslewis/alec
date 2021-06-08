@@ -78,12 +78,14 @@ function generate_synthetic_data(n_applications)
     # Clear bucket of synthetic data...
     run(`aws s3 rm s3://alec/synthetic_data --recursive`)
 
+    file_path = "/app/synthetic_data_$(simulation_id).parquet"
+
     @chain portfolio_df begin
-        file_path = "/app/synthetic_data_$(simulation_id).parquet"
         write_parquet(file_path, _)
-        run(`aws s3api put-object --bucket alec --key synthetic_data/synthetic_data_$(simulation_id).parquet --body synthetic_data_$(simulation_id).parquet`)
-        rm(file_path)
     end
+
+    run(`aws s3api put-object --bucket alec --key synthetic_data/synthetic_data_$(simulation_id).parquet --body synthetic_data_$(simulation_id).parquet`)
+    rm(file_path)
 
     return portfolio_df
 end
