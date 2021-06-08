@@ -1,10 +1,22 @@
 # This file is machine-generated - editing it directly is not advised
 
+[[AWS]]
+deps = ["Base64", "Compat", "Dates", "GitHub", "HTTP", "IniFile", "JSON", "MbedTLS", "Mocking", "OrderedCollections", "Retry", "Sockets", "URIs", "UUIDs", "XMLDict"]
+git-tree-sha1 = "a3814de82a8c5f2831606e3b7d0e95e9e12b541a"
+uuid = "fbe9abb3-538b-5e4e-ba9e-bc94f4f92ebc"
+version = "1.43.0"
+
 [[AWSCore]]
 deps = ["Base64", "Dates", "HTTP", "IniFile", "JSON", "LazyJSON", "MbedTLS", "Mocking", "OrderedCollections", "Retry", "Sockets", "SymDict", "UUIDs", "XMLDict"]
 git-tree-sha1 = "1d3c3af424f774d1b5f040f2f62ce51f2f790b70"
 uuid = "4f1ea46c-232b-54a6-9b17-cc2d0f3e6598"
 version = "0.6.17"
+
+[[AWSS3]]
+deps = ["AWS", "Base64", "Dates", "EzXML", "FilePathsBase", "HTTP", "MbedTLS", "OrderedCollections", "Retry", "SymDict", "UUIDs", "XMLDict"]
+git-tree-sha1 = "fc337c0e58d571b4b760849c8f318c08562af015"
+uuid = "1c724243-ef5b-51ab-93f4-b0a88ac62a95"
+version = "0.8.3"
 
 [[AWSSDK]]
 deps = ["AWSCore", "Test"]
@@ -412,6 +424,12 @@ git-tree-sha1 = "5a0d4b6a22a34d17d53543bd124f4b08ed78e8b0"
 uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
 version = "3.3.9+7"
 
+[[FilePathsBase]]
+deps = ["Dates", "Mmap", "Printf", "Test", "UUIDs"]
+git-tree-sha1 = "0f5e8d0cb91a6386ba47bd1527b240bd5725fbae"
+uuid = "48062228-2e41-5def-b9a4-89aafe57970f"
+version = "0.9.10"
+
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays"]
 git-tree-sha1 = "31939159aeb8ffad1d4d8ee44d07f8558273120a"
@@ -499,6 +517,12 @@ deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Li
 git-tree-sha1 = "9b02998aba7bf074d14de89f9d37ca24a1a0b046"
 uuid = "78b55507-aeef-58d4-861c-77aaff3498b1"
 version = "0.21.0+0"
+
+[[GitHub]]
+deps = ["Base64", "Dates", "HTTP", "JSON", "MbedTLS", "Sockets", "SodiumSeal"]
+git-tree-sha1 = "a4f61fc1b1724e6eec1d9333eac2d4b01d8fcc8f"
+uuid = "bc5e4493-9b4d-5f90-b8aa-2b2bcaad7a26"
+version = "5.4.0"
 
 [[Glib_jll]]
 deps = ["Artifacts", "Gettext_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE_jll", "Pkg", "Zlib_jll"]
@@ -1177,6 +1201,12 @@ version = "0.3.0"
 [[Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
+[[SodiumSeal]]
+deps = ["Base64", "Libdl", "libsodium_jll"]
+git-tree-sha1 = "80cef67d2953e33935b41c6ab0a178b9987b1c99"
+uuid = "2133526b-2bfb-4018-ac12-889fb3908a75"
+version = "0.1.1"
+
 [[SortingAlgorithms]]
 deps = ["DataStructures"]
 git-tree-sha1 = "2ec1962eba973f383239da22e75218565c390a96"
@@ -1580,6 +1610,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
 git-tree-sha1 = "94d180a6d2b5e55e447e2d27a29ed04fe79eb30c"
 uuid = "b53b4c65-9356-5827-b1ea-8c7a1a84506f"
 version = "1.6.38+0"
+
+[[libsodium_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "848ab3d00fe39d6fbc2a8641048f8f272af1c51e"
+uuid = "a9144af2-ca23-56d9-984f-0d03f7b5ccf8"
+version = "1.0.20+0"
 
 [[libvorbis_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Ogg_jll", "Pkg"]

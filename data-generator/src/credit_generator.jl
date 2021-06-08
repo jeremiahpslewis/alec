@@ -8,11 +8,15 @@ using Parquet
 using DataFrames
 using Chain
 using UUIDs
+using AWS
+using AWSS3
 
 n_simulations = 10 # 50
 n_periods = 11
 n_applications_per_period = 100 # 500
 n_applications = n_periods * n_applications_per_period
+
+aws = global_aws_config(; region="eu-central-1")
 
 function generate_synthetic_data(n_applications)
     # Delete this line
@@ -75,7 +79,10 @@ function generate_synthetic_data(n_applications)
     portfolio_df[!, :application_date] = portfolio_df[!, :application_date] .+ 2019
 
     @chain portfolio_df begin
-        write_parquet("/app/synthetic_data_$(simulation_id).parquet", _)
+        file_path = "/app/synthetic_data_$(simulation_id).parquet"
+        write_parquet(file_path, _)
+        run(`aws s3api put-object --bucket alec --key synthetic_data/synthetic_data_$(simulation_id).parquet --body synthetic_data_$(simulation_id).parquet`)
+        rm(file_path)
     end
 
     return portfolio_df
