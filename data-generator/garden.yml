@@ -11,9 +11,6 @@ tasks:
       AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
       AWS_REGION: eu-central-1
-    artifacts:
-      - source: /app/*.parquet
-        target: synthetic-data
 services:
   - name: julia-server
     # disabled: true

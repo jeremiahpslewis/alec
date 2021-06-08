@@ -75,9 +75,6 @@ function generate_synthetic_data(n_applications)
 
     portfolio_df[!, :application_date] = portfolio_df[!, :application_date] .+ 2019
 
-    # Clear bucket of synthetic data...
-    run(`aws s3 rm s3://alec/synthetic_data --recursive`)
-
     file_path = "/app/synthetic_data_$(simulation_id).parquet"
 
     @chain portfolio_df begin
@@ -91,6 +88,9 @@ function generate_synthetic_data(n_applications)
 end
 
 function generate_synthetic_data(n_applications, n_simulations)
+
+    # Clear bucket of synthetic data...
+    run(`aws s3 rm s3://alec/synthetic_data --recursive`)
 
     df = DataFrame()
     for i = 1:n_simulations
