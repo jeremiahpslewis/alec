@@ -8,8 +8,6 @@ using Parquet
 using DataFrames
 using Chain
 using UUIDs
-using AWS
-using AWSS3
 
 n_simulations = 10 # 50
 n_periods = 11
@@ -77,6 +75,9 @@ function generate_synthetic_data(n_applications)
     transform!(portfolio_df, :application_id => (v -> simulation_id) => :simulation_id)
 
     portfolio_df[!, :application_date] = portfolio_df[!, :application_date] .+ 2019
+
+    # Clear bucket of synthetic data...
+    run(`aws s3 rm s3://alec/synthetic_data --recursive`)
 
     @chain portfolio_df begin
         file_path = "/app/synthetic_data_$(simulation_id).parquet"
