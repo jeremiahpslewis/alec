@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY src/Manifest.toml src/Project.toml /app/
 
+RUN apt-get update && apt-get install -y awscli && apt-get clean
+
 RUN julia -e 'using Pkg; Pkg.activate("/app"); Pkg.instantiate(); Pkg.precompile();'
 
 COPY src/ /app/
