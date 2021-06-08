@@ -4,6 +4,7 @@ from dagster import ModeDefinition, PresetDefinition, execute_pipeline, pipeline
 import os
 from typing import Union
 
+import boto3
 import modAL
 import numpy as np
 import pandas as pd
@@ -42,7 +43,7 @@ def get_scenario_df():
 
 def get_raw_data(simulation_id):
     raw_df = pd.read_parquet(
-        f"data/synthetic-data/synthetic_data_{simulation_id}.parquet"
+        f"s3://alec/synthetic_data/synthetic_data_{simulation_id}.parquet"
     )
     raw_df = raw_df.loc[raw_df.simulation_id == simulation_id].copy()
     raw_df.reset_index(inplace=True, drop=True)
@@ -398,10 +399,10 @@ def export_results(
 ):
     simulation_id = context.solid_config["simulation_id"]
 
-    application_df.to_parquet(f"data/applications/{simulation_id}.parquet")
-    portfolio_df.to_parquet(f"data/portfolios/{simulation_id}.parquet")
-    outcome_df.to_parquet(f"data/outcomes/{simulation_id}.parquet")
-    get_scenario_df().to_parquet(f"data/scenarios/{simulation_id}.parquet")
+    application_df.to_parquet(f"s3://alec/applications/{simulation_id}.parquet")
+    portfolio_df.to_parquet(f"s3://alec/portfolios/{simulation_id}.parquet")
+    outcome_df.to_parquet(f"s3://alec/outcomes/{simulation_id}.parquet")
+    get_scenario_df().to_parquet(f"s3://alec/scenarios/{simulation_id}.parquet")
 
 
 def var_if_gr_1(i, var):
@@ -513,22 +514,18 @@ def run_simulation(simulation_id, scenario_name):
 
 
 if __name__ == "__main__":
-    for d in [
-        "data/applications",
-        "data/portfolios",
-        "data/outcomes",
-        "data/scenarios",
-    ]:
-        try:
-            os.rmdir(d)
-        except:
-            pass
-        os.mkdir(d)
+    s3 = boto3.resource('s3')
+    s3_alec = s3.Bucket('alec')
+
+    # Empty bucket of alec objects
+    for folder in ["applications", "portfolios", "outcomes", "scenarios"]:
+        s3_alec.objects.filter(Prefix=f"{folder}/").delete()
+
     simulation_ids = [
-        f for f in os.listdir("data/synthetic-data") if not f.startswith(".")
+        f.key for f in s3_alec.objects.filter(Prefix="synthetic_data/")
     ]
     simulation_ids = [
-        simulation_id.split("_")[2].split(".")[0] for simulation_id in simulation_ids
+        simulation_id.split("/")[1].split(".")[0] for simulation_id in simulation_ids
     ]
 
     scenario_df = get_scenario_df()

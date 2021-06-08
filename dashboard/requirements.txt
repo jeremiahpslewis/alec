@@ -1,4 +1,0 @@
-streamlit==0.80.*
-pandas==1.2.*
-altair==4.1.*
-pyarrow==4.0.*

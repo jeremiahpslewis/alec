@@ -9,9 +9,9 @@ using DataFrames
 using Chain
 using UUIDs
 
-n_simulations = 10 # 50
+n_simulations = 100
 n_periods = 11
-n_applications_per_period = 100 # 500
+n_applications_per_period = 500
 n_applications = n_periods * n_applications_per_period
 
 
@@ -75,13 +75,13 @@ function generate_synthetic_data(n_applications)
 
     portfolio_df[!, :application_date] = portfolio_df[!, :application_date] .+ 2019
 
-    file_path = "/app/synthetic_data_$(simulation_id).parquet"
+    file_path = "/app/$(simulation_id).parquet"
 
     @chain portfolio_df begin
         write_parquet(file_path, _)
     end
 
-    run(`aws s3api put-object --bucket alec --key synthetic_data/synthetic_data_$(simulation_id).parquet --body synthetic_data_$(simulation_id).parquet`)
+    run(`aws s3api put-object --bucket alec --key synthetic_data/$(simulation_id).parquet --body $(simulation_id).parquet`)
     rm(file_path)
 
     return portfolio_df
