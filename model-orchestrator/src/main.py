@@ -1,14 +1,18 @@
-import os
+# Must be loaded first, else 'free()' error
+from dagster import ModeDefinition, PresetDefinition, execute_pipeline, pipeline, solid
 
+import os
+from typing import Union
+
+import modAL
 import numpy as np
 import pandas as pd
-from dagster import (ModeDefinition, PresetDefinition, execute_pipeline,
-                     pipeline, solid)
 from modAL.models import ActiveLearner
+import sklearn
 from modAL.uncertainty import uncertainty_sampling
 from sklearn import linear_model
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from yaml import safe_load
 
@@ -102,31 +106,34 @@ def get_historical_outcome_data(context):
 
     return get_historical_data(simulation_id)["outcomes"]
 
+
 def get_feature_pipeline():
     column_trans = ColumnTransformer(
-    [
-        (
-            "individual_default_risk",
-            StandardScaler(),
-            ["individual_default_risk"],
-        ),
-        (
-            "business_cycle_default_risk",
-            StandardScaler(),
-            ["business_cycle_default_risk"],
-        ),
-    ],
-    remainder="drop",
+        [
+            (
+                "individual_default_risk",
+                StandardScaler(),
+                ["individual_default_risk"],
+            ),
+            (
+                "business_cycle_default_risk",
+                StandardScaler(),
+                ["business_cycle_default_risk"],
+            ),
+        ],
+        remainder="drop",
     )
     return column_trans
+
 
 def get_model_pipeline_object():
     column_trans = get_feature_pipeline()
     model_pipeline = make_pipeline(column_trans, linear_model.LogisticRegression())
     return model_pipeline
 
+
 @solid(config_schema={"scenario_name": str})
-def get_model_pipeline(context) -> Pipeline:
+def get_model_pipeline(context) -> sklearn.pipeline.Pipeline:
     scenario_name = context.solid_config["scenario_name"]
     scenario_df = get_scenario_df()
 
@@ -138,12 +145,12 @@ def get_model_pipeline(context) -> Pipeline:
     if ml_model_spec == 1:
         model_pipeline = get_model_pipeline_object()
     else:
-        pass
+        model_pipeline = get_model_pipeline_object()
     return model_pipeline
 
 
 @solid(config_schema={"scenario_name": str})
-def get_active_learning_pipeline(context) -> Pipeline:
+def get_active_learning_pipeline(context):
     scenario_name = context.solid_config["scenario_name"]
     scenario_df = get_scenario_df()
 
@@ -158,19 +165,7 @@ def get_active_learning_pipeline(context) -> Pipeline:
         return getattr(modAL.uncertainty, active_learning_spec)
     return model_pipeline
 
-
-@solid
-def train_model(
-    context,
-    application_df: pd.DataFrame,
-    portfolio_df: pd.DataFrame,
-    outcome_df,
-    model_pipeline: Pipeline,
-) -> Pipeline:
-    """
-    training_data: data collected from previous loans granted, as pd.DataFrame
-    model: machine learning model (pipeline) which can be applied to training data
-    """
+def prepare_training_data(application_df: pd.DataFrame, portfolio_df: pd.DataFrame, outcome_df):
     training_df = pd.merge(
         application_df, portfolio_df, on=["application_id", "simulation_id"], how="left"
     )
@@ -197,6 +192,25 @@ def train_model(
     assert training_df.portfolio.notnull().sum() == portfolio_df.shape[0]
     assert training_df.default.notnull().sum() == outcome_df.shape[0]
     assert training_df.shape[0] > 0
+
+
+
+    return training_df.reset_index(drop=True)
+
+@solid
+def train_model(
+    context,
+    application_df: pd.DataFrame,
+    portfolio_df: pd.DataFrame,
+    outcome_df,
+    model_pipeline: sklearn.pipeline.Pipeline,
+) -> sklearn.pipeline.Pipeline:
+    """
+    training_data: data collected from previous loans granted, as pd.DataFrame
+    model: machine learning model (pipeline) which can be applied to training data
+    """
+
+    training_df = prepare_training_data(application_df, portfolio_df, outcome_df)
 
     # NOTE: Currently all cases without observed default are dropped for ML model!
 
@@ -234,7 +248,7 @@ def choose_business_portfolio(
     context,
     application_df: pd.DataFrame,
     portfolio_df: pd.DataFrame,
-    model_pipeline: Pipeline,
+    model_pipeline: sklearn.pipeline.Pipeline,
 ) -> pd.DataFrame:
     """
     Decide whom to grant loans to (for profit)
@@ -293,8 +307,8 @@ def choose_research_portfolio(
     application_df: pd.DataFrame,
     portfolio_df: pd.DataFrame,
     outcome_df: pd.DataFrame,
-    model_pipeline: Pipeline,
-    active_learning_pipeline: Pipeline,
+    model_pipeline: sklearn.pipeline.Pipeline,
+    active_learning_pipeline,
 ) -> pd.DataFrame:
     """
     Decide whom to grant loans to (for research / profit in subsequent rounds)
@@ -323,8 +337,10 @@ def choose_research_portfolio(
     if business_to_research_ratio == 0:
         return portfolio_df
 
-    business_loan_count = sum(application_df.application_id.isin(portfolio_df.application_id.tolist())
-        & (application_df.application_date == application_df.application_date.max()))
+    business_loan_count = sum(
+        application_df.application_id.isin(portfolio_df.application_id.tolist())
+        & (application_df.application_date == application_df.application_date.max())
+    )
     n_research_loans = int(business_loan_count * (1 / business_to_research_ratio))
 
     if active_learning_pipeline is None:
@@ -332,10 +348,21 @@ def choose_research_portfolio(
             min(n_research_loans, unfunded_applications.shape[0])
         )
     else:
-        research_loan_index = active_learning_pipeline(classifier=model_pipeline, X=unfunded_applications, n_instances=n_research_loans)
-        research_portfolio_df = unfunded_applications.loc[research_loan_index]
-    
-    research_portfolio_df = research_portfolio_df[["application_id", "simulation_id"]].reset_index(drop=True).copy()
+
+        active_learning_df = prepare_training_data(unfunded_applications, portfolio_df.loc[portfolio_df.application_id.isin(unfunded_applications.application_id.tolist())], outcome_df.loc[outcome_df.application_id.isin(unfunded_applications.application_id.tolist())])
+
+        research_loan_index = active_learning_pipeline(
+            classifier=model_pipeline,
+            X=active_learning_df.loc[:, X_vars],
+            n_instances=n_research_loans,
+        )
+        research_portfolio_df = active_learning_df.loc[research_loan_index]
+
+    research_portfolio_df = (
+        research_portfolio_df[["application_id", "simulation_id"]]
+        .reset_index(drop=True)
+        .copy()
+    )
 
     research_portfolio_df["portfolio"] = "research"
     research_portfolio_df["credit_granted"] = True

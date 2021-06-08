@@ -4,5 +4,5 @@ ipython==7.*
 modAL==0.4.1
 pandas==1.2.*
 pyarrow==4.0.*
-PyYAML==5.4.1
+PyYAML==5.4.*
 scikit-learn==0.24.*

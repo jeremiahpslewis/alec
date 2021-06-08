@@ -9,7 +9,7 @@ using DataFrames
 using Chain
 using UUIDs
 
-n_simulations = 25 # 50
+n_simulations = 10 # 50
 n_periods = 11
 n_applications_per_period = 100 # 500
 n_applications = n_periods * n_applications_per_period
