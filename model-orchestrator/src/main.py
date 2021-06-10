@@ -19,7 +19,7 @@ from yaml import safe_load
 
 # NOTE: counterfactual_default is defined as default outcome had applicant been granted loan
 run_metadata = ["simulation_id"]
-simulation_metadata = ["application_date", "application_id", "counterfactual_default"]
+simulation_metadata = ["application_date", "application_id", "counterfactual_default", "scenario_id"]
 X_vars = ["individual_default_risk", "business_cycle_default_risk"]
 y_var = ["default"]
 
@@ -41,20 +41,21 @@ def get_scenario_df():
     return scenario_df
 
 
-def get_raw_data(simulation_id):
+def get_raw_data(simulation_id, scenario_id):
     raw_df = pd.read_parquet(
-        f"s3://alec/synthetic_data/synthetic_data_{simulation_id}.parquet"
+        f"s3://alec/synthetic_data/{simulation_id}.parquet"
     )
     raw_df = raw_df.loc[raw_df.simulation_id == simulation_id].copy()
     raw_df.reset_index(inplace=True, drop=True)
     raw_df["counterfactual_default"] = raw_df["default"]
+    raw_df["scenario_id"] = scenario_id
     return raw_df
 
 
 def get_historical_data(
-    simulation_id,
+    simulation_id, scenario_id
 ) -> list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    df = get_raw_data(simulation_id)
+    df = get_raw_data(simulation_id, scenario_id)
     df["portfolio"] = "business"
     df["credit_granted"] = True
     df["funding_probability"] = 1
@@ -87,25 +88,28 @@ def get_historical_data(
     }
 
 
-@solid(config_schema={"simulation_id": str})
+@solid(config_schema={"simulation_id": str, "scenario_id": str})
 def get_historical_application_data(context):
     simulation_id = context.solid_config["simulation_id"]
+    scenario_id = context.solid_config["scenario_id"]
 
-    return get_historical_data(simulation_id)["applications"]
+    return get_historical_data(simulation_id, scenario_id)["applications"]
 
 
-@solid(config_schema={"simulation_id": str})
+@solid(config_schema={"simulation_id": str, "scenario_id": str})
 def get_historical_portfolio_data(context):
     simulation_id = context.solid_config["simulation_id"]
+    scenario_id = context.solid_config["scenario_id"]
 
-    return get_historical_data(simulation_id)["portfolio"]
+    return get_historical_data(simulation_id, scenario_id)["portfolio"]
 
 
-@solid(config_schema={"simulation_id": str})
+@solid(config_schema={"simulation_id": str, "scenario_id": str})
 def get_historical_outcome_data(context):
     simulation_id = context.solid_config["simulation_id"]
+    scenario_id = context.solid_config["scenario_id"]
 
-    return get_historical_data(simulation_id)["outcomes"]
+    return get_historical_data(simulation_id, scenario_id)["outcomes"]
 
 
 def get_feature_pipeline():
@@ -133,13 +137,13 @@ def get_model_pipeline_object():
     return model_pipeline
 
 
-@solid(config_schema={"scenario_name": str})
+@solid(config_schema={"scenario_id": str})
 def get_model_pipeline(context) -> sklearn.pipeline.Pipeline:
-    scenario_name = context.solid_config["scenario_name"]
+    scenario_id = context.solid_config["scenario_id"]
     scenario_df = get_scenario_df()
 
     ml_model_spec = scenario_df.loc[
-        scenario_df.name == scenario_name, "ml_model_spec"
+        scenario_df.name == scenario_id, "ml_model_spec"
     ].iloc[0]
     column_trans = get_feature_pipeline()
 
@@ -150,13 +154,13 @@ def get_model_pipeline(context) -> sklearn.pipeline.Pipeline:
     return model_pipeline
 
 
-@solid(config_schema={"scenario_name": str})
+@solid(config_schema={"scenario_id": str})
 def get_active_learning_pipeline(context):
-    scenario_name = context.solid_config["scenario_name"]
+    scenario_id = context.solid_config["scenario_id"]
     scenario_df = get_scenario_df()
 
     active_learning_spec = scenario_df.loc[
-        scenario_df.name == scenario_name, "active_learning_spec"
+        scenario_df.name == scenario_id, "active_learning_spec"
     ].iloc[0]
     model_pipeline = get_model_pipeline_object()
 
@@ -225,7 +229,7 @@ def train_model(
     return model_pipeline
 
 
-@solid(config_schema={"application_date": int, "simulation_id": str})
+@solid(config_schema={"application_date": int, "simulation_id": str, "scenario_id": str})
 def get_applications(context, application_df) -> pd.DataFrame:
     """
     gets applications for new loans from customers
@@ -233,8 +237,9 @@ def get_applications(context, application_df) -> pd.DataFrame:
 
     application_date = context.solid_config["application_date"]
     simulation_id = context.solid_config["simulation_id"]
+    scenario_id = context.solid_config["scenario_id"]
 
-    raw_application_df = get_raw_data(simulation_id)
+    raw_application_df = get_raw_data(simulation_id, scenario_id)
     new_application_df = raw_application_df.loc[
         raw_application_df.application_date == application_date
     ].copy()
@@ -244,7 +249,7 @@ def get_applications(context, application_df) -> pd.DataFrame:
     ).reset_index(drop=True)
 
 
-@solid(config_schema={"application_date": int, "scenario_name": str})
+@solid(config_schema={"application_date": int, "scenario_id": str})
 def choose_business_portfolio(
     context,
     application_df: pd.DataFrame,
@@ -259,11 +264,11 @@ def choose_business_portfolio(
     """
 
     application_date = context.solid_config["application_date"]
-    scenario_name = context.solid_config["scenario_name"]
+    scenario_id = context.solid_config["scenario_id"]
     scenario_df = get_scenario_df()
 
     application_acceptance_rate = scenario_df.loc[
-        scenario_df.name == scenario_name, "application_acceptance_rate"
+        scenario_df.name == scenario_id, "application_acceptance_rate"
     ].iloc[0]
 
     current_application_df = (
@@ -302,7 +307,7 @@ def choose_business_portfolio(
     return portfolio_df.append(business_portfolio_df[full_portfolio_col_set])
 
 
-@solid(config_schema={"application_date": int, "scenario_name": str})
+@solid(config_schema={"application_date": int, "scenario_id": str})
 def choose_research_portfolio(
     context,
     application_df: pd.DataFrame,
@@ -318,11 +323,11 @@ def choose_research_portfolio(
     """
 
     application_date = context.solid_config["application_date"]
-    scenario_name = context.solid_config["scenario_name"]
+    scenario_id = context.solid_config["scenario_id"]
     scenario_df = get_scenario_df()
 
     business_to_research_ratio = scenario_df.loc[
-        scenario_df.name == scenario_name, "business_to_research_ratio"
+        scenario_df.name == scenario_id, "business_to_research_ratio"
     ].iloc[0]
 
     unfunded_applications = application_df[
@@ -372,7 +377,7 @@ def choose_research_portfolio(
     return portfolio_df.append(research_portfolio_df[full_portfolio_col_set])
 
 
-@solid(config_schema={"application_date": int, "simulation_id": str})
+@solid(config_schema={"application_date": int, "simulation_id": str, "scenario_id": str})
 def observe_outcomes(
     context, portfolio_df: pd.DataFrame, outcome_df: pd.DataFrame
 ) -> pd.DataFrame:
@@ -381,8 +386,9 @@ def observe_outcomes(
     """
     application_date = context.solid_config["application_date"]
     simulation_id = context.solid_config["simulation_id"]
+    scenario_id = context.solid_config["scenario_id"]
 
-    raw_data = get_raw_data(simulation_id)
+    raw_data = get_raw_data(simulation_id, scenario_id)
     new_loan_outcomes = raw_data.loc[
         (raw_data.application_date == application_date)
         & (raw_data.application_id.isin(portfolio_df.application_id.tolist()))
@@ -390,7 +396,7 @@ def observe_outcomes(
     return outcome_df.append(new_loan_outcomes[full_outcome_col_set])
 
 
-@solid(config_schema={"simulation_id": str})
+@solid(config_schema={"simulation_id": str, "scenario_id": str})
 def export_results(
     context,
     application_df: pd.DataFrame,
@@ -398,11 +404,12 @@ def export_results(
     outcome_df: pd.DataFrame,
 ):
     simulation_id = context.solid_config["simulation_id"]
+    scenario_id = context.solid_config["scenario_id"]
 
-    application_df.to_parquet(f"s3://alec/applications/{simulation_id}.parquet")
-    portfolio_df.to_parquet(f"s3://alec/portfolios/{simulation_id}.parquet")
-    outcome_df.to_parquet(f"s3://alec/outcomes/{simulation_id}.parquet")
-    get_scenario_df().to_parquet(f"s3://alec/scenarios/{simulation_id}.parquet")
+    application_df.to_parquet(f"s3://alec/applications/{scenario_id}/{simulation_id}.parquet")
+    portfolio_df.to_parquet(f"s3://alec/portfolios/{scenario_id}/{simulation_id}.parquet")
+    outcome_df.to_parquet(f"s3://alec/outcomes/{scenario_id}/{simulation_id}.parquet")
+    get_scenario_df().to_parquet(f"s3://alec/scenarios/{scenario_id}/{simulation_id}.parquet")
 
 
 def var_if_gr_1(i, var):
@@ -412,12 +419,12 @@ def var_if_gr_1(i, var):
         return var
 
 
-def run_simulation(simulation_id, scenario_name):
+def run_simulation(simulation_id, scenario_id):
     solids_dict = {
         var_if_gr_1(i + 1, var): {
             "config": {
                 "application_date": range(2021, 2031)[i],
-                "scenario_name": scenario_name,
+                "scenario_id": scenario_id,
             }
         }
         for i in range(10)
@@ -429,9 +436,9 @@ def run_simulation(simulation_id, scenario_name):
 
     solids_dict.update(
         {
-            "get_model_pipeline": {"config": {"scenario_name": scenario_name}},
+            "get_model_pipeline": {"config": {"scenario_id": scenario_id}},
             "get_active_learning_pipeline": {
-                "config": {"scenario_name": scenario_name}
+                "config": {"scenario_id": scenario_id}
             },
         }
     )
@@ -442,6 +449,7 @@ def run_simulation(simulation_id, scenario_name):
                 "config": {
                     "application_date": range(2021, 2031)[i],
                     "simulation_id": simulation_id,
+                    "scenario_id": scenario_id,
                 }
             }
             for i in range(10)
@@ -454,7 +462,7 @@ def run_simulation(simulation_id, scenario_name):
 
     solids_dict.update(
         {
-            var: {"config": {"simulation_id": simulation_id}}
+            var: {"config": {"simulation_id": simulation_id, "scenario_id": scenario_id}}
             for var in [
                 "get_historical_application_data",
                 "get_historical_portfolio_data",
@@ -520,6 +528,7 @@ if __name__ == "__main__":
     # Empty bucket of alec objects
     for folder in ["applications", "portfolios", "outcomes", "scenarios"]:
         s3_alec.objects.filter(Prefix=f"{folder}/").delete()
+        s3_alec.objects.filter(Prefix=f"{folder}/").delete()
 
     simulation_ids = [
         f.key for f in s3_alec.objects.filter(Prefix="synthetic_data/")
@@ -529,6 +538,6 @@ if __name__ == "__main__":
     ]
 
     scenario_df = get_scenario_df()
-    for scenario_name in scenario_df.name.tolist():
+    for scenario_id in scenario_df.id.tolist():
         for simulation_id in simulation_ids:
-            run_simulation(simulation_id, scenario_name)
+            run_simulation(simulation_id, scenario_id)

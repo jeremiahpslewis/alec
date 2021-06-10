@@ -6,8 +6,8 @@ services:
     ports:
       - name: http
         containerPort: 3000
-    dependencies:
-      - generate-synthetic-data
+    # dependencies:
+    #   - generate-synthetic-data
     limits:
       memory: 10240
     devMode:
@@ -30,6 +30,4 @@ tests:
   - name: test-alec
     disabled: true
     command: ["dagster", "pipeline", "execute", "-f", "main.py", "--preset", "unittest"]
-    artifacts:
-      - source: /app/*.parquet
-        target: results
+

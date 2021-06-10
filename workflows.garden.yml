@@ -1,33 +1,12 @@
 kind: Workflow
 name: gen-data
 steps:
-  - script: |
-      rm -rf .garden/artifacts/synthetic-data/
   - command: [run, task, generate-synthetic-data, --force]
-  - script: |
-      rm -rf model-orchestrator/src/data/synthetic-data/
-      mv .garden/artifacts/synthetic-data/ model-orchestrator/src/data/
 ---
 kind: Workflow
 name: full-pipeline
 steps:
-  - script: |
-      rm -rf .garden/artifacts/synthetic-data/
-      rm -rf .garden/artifacts/applications/
-      rm -rf .garden/artifacts/portfolios/
-      rm -rf .garden/artifacts/outcomes/
-      rm -rf .garden/artifacts/scenarios/
   - command: [run, task, generate-synthetic-data, --force]
-  - script: |
-      rm -rf model-orchestrator/src/data/
-      mkdir model-orchestrator/src/data/
-      mv .garden/artifacts/synthetic-data/ model-orchestrator/src/data/
   - command: [run, task, run-alec, --force, --force-build]
-  - script: |
-      rm -rf dashboard/src/data/
-      mkdir dashboard/src/data
-      mv .garden/artifacts/applications dashboard/src/data/
-      mv .garden/artifacts/portfolios dashboard/src/data/
-      mv .garden/artifacts/outcomes dashboard/src/data/
-      mv .garden/artifacts/scenarios dashboard/src/data/
+
         
