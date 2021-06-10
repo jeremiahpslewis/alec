@@ -19,7 +19,12 @@ from yaml import safe_load
 
 # NOTE: counterfactual_default is defined as default outcome had applicant been granted loan
 run_metadata = ["simulation_id"]
-simulation_metadata = ["application_date", "application_id", "counterfactual_default", "scenario_id"]
+simulation_metadata = [
+    "application_date",
+    "application_id",
+    "counterfactual_default",
+    "scenario_id",
+]
 X_vars = ["individual_default_risk", "business_cycle_default_risk"]
 y_var = ["default"]
 
@@ -42,9 +47,7 @@ def get_scenario_df():
 
 
 def get_raw_data(simulation_id, scenario_id):
-    raw_df = pd.read_parquet(
-        f"s3://alec/synthetic_data/{simulation_id}.parquet"
-    )
+    raw_df = pd.read_parquet(f"s3://alec/synthetic_data/{simulation_id}.parquet")
     raw_df = raw_df.loc[raw_df.simulation_id == simulation_id].copy()
     raw_df.reset_index(inplace=True, drop=True)
     raw_df["counterfactual_default"] = raw_df["default"]
@@ -116,16 +119,21 @@ def get_feature_pipeline():
     column_trans = ColumnTransformer(
         [
             (
-                "individual_default_risk",
+                "monthly_income_1k_eur",
                 StandardScaler(),
-                ["individual_default_risk"],
+                ["monthly_income_1k_eur"],
             ),
             (
-                "business_cycle_default_risk",
+                "assets_10k_eur",
                 StandardScaler(),
-                ["business_cycle_default_risk"],
+                ["assets_10k_eur"],
             ),
-        ],
+            (
+                "application_date",
+                StandardScaler(),
+                ["application_date"],
+            ),
+                    ],
         remainder="drop",
     )
     return column_trans
@@ -133,7 +141,7 @@ def get_feature_pipeline():
 
 def get_model_pipeline_object():
     column_trans = get_feature_pipeline()
-    model_pipeline = make_pipeline(column_trans, linear_model.LogisticRegression())
+    model_pipeline = make_pipeline(column_trans, sklearn.ensemble.GradientBoostingRegressor())
     return model_pipeline
 
 
@@ -143,7 +151,7 @@ def get_model_pipeline(context) -> sklearn.pipeline.Pipeline:
     scenario_df = get_scenario_df()
 
     ml_model_spec = scenario_df.loc[
-        scenario_df.name == scenario_id, "ml_model_spec"
+        scenario_df.id == scenario_id, "ml_model_spec"
     ].iloc[0]
     column_trans = get_feature_pipeline()
 
@@ -160,7 +168,7 @@ def get_active_learning_pipeline(context):
     scenario_df = get_scenario_df()
 
     active_learning_spec = scenario_df.loc[
-        scenario_df.name == scenario_id, "active_learning_spec"
+        scenario_df.id == scenario_id, "active_learning_spec"
     ].iloc[0]
     model_pipeline = get_model_pipeline_object()
 
@@ -170,7 +178,10 @@ def get_active_learning_pipeline(context):
         return getattr(modAL.uncertainty, active_learning_spec)
     return model_pipeline
 
-def prepare_training_data(application_df: pd.DataFrame, portfolio_df: pd.DataFrame, outcome_df):
+
+def prepare_training_data(
+    application_df: pd.DataFrame, portfolio_df: pd.DataFrame, outcome_df
+):
     training_df = pd.merge(
         application_df, portfolio_df, on=["application_id", "simulation_id"], how="left"
     )
@@ -198,9 +209,8 @@ def prepare_training_data(application_df: pd.DataFrame, portfolio_df: pd.DataFra
     assert training_df.default.notnull().sum() == outcome_df.shape[0]
     assert training_df.shape[0] > 0
 
-
-
     return training_df.reset_index(drop=True)
+
 
 @solid
 def train_model(
@@ -229,7 +239,9 @@ def train_model(
     return model_pipeline
 
 
-@solid(config_schema={"application_date": int, "simulation_id": str, "scenario_id": str})
+@solid(
+    config_schema={"application_date": int, "simulation_id": str, "scenario_id": str}
+)
 def get_applications(context, application_df) -> pd.DataFrame:
     """
     gets applications for new loans from customers
@@ -268,7 +280,7 @@ def choose_business_portfolio(
     scenario_df = get_scenario_df()
 
     application_acceptance_rate = scenario_df.loc[
-        scenario_df.name == scenario_id, "application_acceptance_rate"
+        scenario_df.id == scenario_id, "application_acceptance_rate"
     ].iloc[0]
 
     current_application_df = (
@@ -327,7 +339,7 @@ def choose_research_portfolio(
     scenario_df = get_scenario_df()
 
     business_to_research_ratio = scenario_df.loc[
-        scenario_df.name == scenario_id, "business_to_research_ratio"
+        scenario_df.id == scenario_id, "business_to_research_ratio"
     ].iloc[0]
 
     unfunded_applications = application_df[
@@ -355,7 +367,19 @@ def choose_research_portfolio(
         )
     else:
 
-        active_learning_df = prepare_training_data(unfunded_applications, portfolio_df.loc[portfolio_df.application_id.isin(unfunded_applications.application_id.tolist())], outcome_df.loc[outcome_df.application_id.isin(unfunded_applications.application_id.tolist())])
+        active_learning_df = prepare_training_data(
+            unfunded_applications,
+            portfolio_df.loc[
+                portfolio_df.application_id.isin(
+                    unfunded_applications.application_id.tolist()
+                )
+            ],
+            outcome_df.loc[
+                outcome_df.application_id.isin(
+                    unfunded_applications.application_id.tolist()
+                )
+            ],
+        )
 
         research_loan_index = active_learning_pipeline(
             classifier=model_pipeline,
@@ -377,7 +401,9 @@ def choose_research_portfolio(
     return portfolio_df.append(research_portfolio_df[full_portfolio_col_set])
 
 
-@solid(config_schema={"application_date": int, "simulation_id": str, "scenario_id": str})
+@solid(
+    config_schema={"application_date": int, "simulation_id": str, "scenario_id": str}
+)
 def observe_outcomes(
     context, portfolio_df: pd.DataFrame, outcome_df: pd.DataFrame
 ) -> pd.DataFrame:
@@ -406,10 +432,16 @@ def export_results(
     simulation_id = context.solid_config["simulation_id"]
     scenario_id = context.solid_config["scenario_id"]
 
-    application_df.to_parquet(f"s3://alec/applications/{scenario_id}/{simulation_id}.parquet")
-    portfolio_df.to_parquet(f"s3://alec/portfolios/{scenario_id}/{simulation_id}.parquet")
+    application_df.to_parquet(
+        f"s3://alec/applications/{scenario_id}/{simulation_id}.parquet"
+    )
+    portfolio_df.to_parquet(
+        f"s3://alec/portfolios/{scenario_id}/{simulation_id}.parquet"
+    )
     outcome_df.to_parquet(f"s3://alec/outcomes/{scenario_id}/{simulation_id}.parquet")
-    get_scenario_df().to_parquet(f"s3://alec/scenarios/{scenario_id}/{simulation_id}.parquet")
+    get_scenario_df().to_parquet(
+        f"s3://alec/scenarios/{scenario_id}/{simulation_id}.parquet"
+    )
 
 
 def var_if_gr_1(i, var):
@@ -437,9 +469,7 @@ def run_simulation(simulation_id, scenario_id):
     solids_dict.update(
         {
             "get_model_pipeline": {"config": {"scenario_id": scenario_id}},
-            "get_active_learning_pipeline": {
-                "config": {"scenario_id": scenario_id}
-            },
+            "get_active_learning_pipeline": {"config": {"scenario_id": scenario_id}},
         }
     )
 
@@ -462,7 +492,9 @@ def run_simulation(simulation_id, scenario_id):
 
     solids_dict.update(
         {
-            var: {"config": {"simulation_id": simulation_id, "scenario_id": scenario_id}}
+            var: {
+                "config": {"simulation_id": simulation_id, "scenario_id": scenario_id}
+            }
             for var in [
                 "get_historical_application_data",
                 "get_historical_portfolio_data",
@@ -522,17 +554,15 @@ def run_simulation(simulation_id, scenario_id):
 
 
 if __name__ == "__main__":
-    s3 = boto3.resource('s3')
-    s3_alec = s3.Bucket('alec')
+    s3 = boto3.resource("s3")
+    s3_alec = s3.Bucket("alec")
 
     # Empty bucket of alec objects
     for folder in ["applications", "portfolios", "outcomes", "scenarios"]:
         s3_alec.objects.filter(Prefix=f"{folder}/").delete()
         s3_alec.objects.filter(Prefix=f"{folder}/").delete()
 
-    simulation_ids = [
-        f.key for f in s3_alec.objects.filter(Prefix="synthetic_data/")
-    ]
+    simulation_ids = [f.key for f in s3_alec.objects.filter(Prefix="synthetic_data/")]
     simulation_ids = [
         simulation_id.split("/")[1].split(".")[0] for simulation_id in simulation_ids
     ]
