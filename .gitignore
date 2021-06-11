@@ -137,3 +137,5 @@ dmypy.json
 !dashboard/src/data/applications/*.parquet
 !dashboard/src/data/portfolios/*.parquet
 !dashboard/src/data/outcomes/*.parquet
+
+*.json

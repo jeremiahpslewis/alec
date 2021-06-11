@@ -18,25 +18,22 @@ from sklearn.preprocessing import StandardScaler
 from yaml import safe_load
 
 # NOTE: counterfactual_default is defined as default outcome had applicant been granted loan
-run_metadata = ["simulation_id"]
+simulation_indices = ["simulation_id", "application_id"]
 simulation_metadata = [
-    "application_date",
-    "application_id",
     "counterfactual_default",
     "scenario_id",
 ]
-X_vars = ["individual_default_risk", "business_cycle_default_risk"]
+X_vars = ["income_based_risk", "assets_based_risk", "application_date"]
 y_var = ["default"]
 
-full_application_col_set = [*run_metadata, *simulation_metadata, *X_vars]
+full_application_col_set = [*simulation_indices, *simulation_metadata, *X_vars]
 full_portfolio_col_set = [
-    *run_metadata,
-    "application_id",
+    *simulation_indices,
     "portfolio",
     "credit_granted",
     "funding_probability",
 ]
-full_outcome_col_set = [*run_metadata, "application_id", "default"]
+full_outcome_col_set = [*simulation_indices, "default"]
 
 
 def get_scenario_df():
@@ -119,14 +116,14 @@ def get_feature_pipeline():
     column_trans = ColumnTransformer(
         [
             (
-                "monthly_income_1k_eur",
+                "assets_based_risk",
                 StandardScaler(),
-                ["monthly_income_1k_eur"],
+                ["assets_based_risk"],
             ),
             (
-                "assets_10k_eur",
+                "income_based_risk",
                 StandardScaler(),
-                ["assets_10k_eur"],
+                ["income_based_risk"],
             ),
             (
                 "application_date",
@@ -141,7 +138,7 @@ def get_feature_pipeline():
 
 def get_model_pipeline_object():
     column_trans = get_feature_pipeline()
-    model_pipeline = make_pipeline(column_trans, sklearn.ensemble.GradientBoostingRegressor())
+    model_pipeline = make_pipeline(column_trans, linear_model.LogisticRegression())
     return model_pipeline
 
 
@@ -192,12 +189,6 @@ def prepare_training_data(
         on=["application_id", "simulation_id"],
         how="left",
     )
-
-    # NOTE: Check here that rows are not dropped / added!
-    # training_df.to_parquet("training_df.parquet")
-    # application_df.to_parquet("application_df.parquet")
-    # portfolio_df.to_parquet("portfolio_df.parquet")
-    # outcome_df.to_parquet("outcome_df.parquet")
 
     assert (
         training_df.application_id.duplicated().sum() == 0
