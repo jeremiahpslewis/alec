@@ -22,6 +22,10 @@ simulation_indices = ["simulation_id", "application_id"]
 simulation_metadata = [
     "counterfactual_default",
     "scenario_id",
+    "income_over_assets_individual_risk_weight",
+    "income_over_assets_cycle_risk_weight",
+    "income_over_assets_gross_risk_weight",
+    "total_default_risk",
 ]
 X_vars = ["income_based_risk", "assets_based_risk", "application_date"]
 y_var = ["default"]
@@ -127,7 +131,7 @@ def get_feature_pipeline():
             ),
             (
                 "application_date",
-                StandardScaler(),
+                sklearn.preprocessing.PolynomialFeatures(degree=4),
                 ["application_date"],
             ),
                     ],

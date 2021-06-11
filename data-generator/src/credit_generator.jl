@@ -29,7 +29,7 @@ function generate_synthetic_data(n_applications)
 
     business_cycle_df = DataFrame(
         "application_date" => 1:n_periods,
-        "income_over_assets_cycle_risk_weight" => 1 .- 0.9.^(1:n_periods),
+        "income_over_assets_cycle_risk_weight" => [0.01, 0.01, 0.05, 0.05, 0.1, 0.5, 0.9, 0.95, 0.95, 0.99, 0.99],
     )
 
     individuals_df = DataFrame(sample(individual_attributes(), NUTS(1000, 0.65), n_applications))
@@ -45,8 +45,9 @@ function generate_synthetic_data(n_applications)
         (portfolio_df[!, :income_over_assets_individual_risk_weight].^2 .+
         portfolio_df[!, :income_over_assets_cycle_risk_weight].^2).^0.5    
     
+    # Weighted average of income risk and asset risk, which is a function of application_date and individual attributes
     portfolio_df[!, :total_default_risk] = (portfolio_df[!, :income_over_assets_gross_risk_weight] .* portfolio_df[!, :income_based_risk]) .+
-    ((1 .- portfolio_df[!, :income_over_assets_gross_risk_weight]) .* portfolio_df[!, :income_based_risk])
+    ((1 .- portfolio_df[!, :income_over_assets_gross_risk_weight]) .* portfolio_df[!, :assets_based_risk])
 
     portfolio_df[!, :default] = rand.(Bernoulli.(portfolio_df[!, :total_default_risk]))
 

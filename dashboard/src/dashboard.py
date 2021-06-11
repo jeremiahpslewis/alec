@@ -41,8 +41,8 @@ if False:
 
     df_summary_full = pd.DataFrame()
 
-    for scenario_id in scenario_ids:#[1:5]:
-        for simulation_id in simulation_ids:#[1:5]:
+    for scenario_id in scenario_ids:
+        for simulation_id in simulation_ids:
 
             app_df = pd.read_parquet(
                 f"s3://alec/applications/{scenario_id}/{simulation_id}.parquet"
@@ -95,11 +95,36 @@ if False:
 
             df_summary_full = df_summary_full.append(df_summary).append(df_summary_all)
             df_summary_full.to_parquet("s3://alec/dashboard/summary_data.parquet")
+            df.to_parquet("s3://alec/dashboard/full_data.parquet")
 
 
 df_summary_full = pd.read_parquet("s3://alec/dashboard/summary_data.parquet")
+df = pd.read_parquet("s3://alec/dashboard/full_data.parquet")
+
+c = (
+    alt.Chart(df)
+    .mark_point()
+    .encode(
+        y=alt.Y(
+            "income_based_risk", title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
+        ),
+        x=alt.X(
+            "total_default_risk",
+            title="Counterfactual Default",
+            # axis=alt.Axis(format="%"),
+            # scale=pct_scale,
+        ),
+        # color="portfolio",
+        color="application_date"
+    )
+)
+
+st.write(c)
+
+
+
 df_plot = df_summary_full[df_summary_full.application_date > 2020].copy()
-pct_scale = alt.Scale(domain=(0, 0.3))
+pct_scale = alt.Scale(domain=(0, 1))
 
 c = (
     alt.Chart(df_plot)
@@ -118,6 +143,7 @@ c = (
     )
 )
 
+st.write(c)
 
 d = (
     alt.Chart(df_plot)
@@ -139,7 +165,7 @@ d = (
 c = c.mark_errorband(extent="ci", opacity=0.2) + d + d.mark_point()
 
 c = c.properties(height=500, width=1000)
-c.facet(
+c = c.facet(
     row="active_learning_spec:N",
     column='business_to_research_ratio:N',
 )
