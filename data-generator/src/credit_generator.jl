@@ -8,10 +8,11 @@ using Parquet
 using DataFrames
 using Chain
 using UUIDs
+using DataFrameMacros
 
-n_simulations = 10
+n_simulations = 50
 n_periods = 11
-n_applications_per_period = 50
+n_applications_per_period = 1000
 n_applications = n_periods * n_applications_per_period
 
 
@@ -33,34 +34,34 @@ function generate_synthetic_data(n_applications)
     )
 
     individuals_df = DataFrame(sample(individual_attributes(), NUTS(1000, 0.65), n_applications))
-    individuals_df[!, :application_date] .= repeat(1:n_periods, n_applications_per_period)
 
-    portfolio_df = leftjoin(
-        individuals_df[!, [:application_date, :income_based_risk, :assets_based_risk, :income_over_assets_individual_risk_weight]],
-        business_cycle_df,
-        on = :application_date,
-    )
-
-    portfolio_df[!, :income_over_assets_gross_risk_weight] =
-        (portfolio_df[!, :income_over_assets_individual_risk_weight].^2 .+
-        portfolio_df[!, :income_over_assets_cycle_risk_weight].^2).^0.5    
-    
-    # Weighted average of income risk and asset risk, which is a function of application_date and individual attributes
-    portfolio_df[!, :total_default_risk] = (portfolio_df[!, :income_over_assets_gross_risk_weight] .* portfolio_df[!, :income_based_risk]) .+
-    ((1 .- portfolio_df[!, :income_over_assets_gross_risk_weight]) .* portfolio_df[!, :assets_based_risk])
-
-    portfolio_df[!, :default] = rand.(Bernoulli.(portfolio_df[!, :total_default_risk]))
-
-    function return_uuid(x)
-        return string(UUIDs.uuid4())
+    portfolio_df = @chain individuals_df begin
+        @transform(:application_date = @c repeat(1:n_periods, n_applications_per_period))
+        leftjoin(business_cycle_df, on = :application_date)
+        @select(:application_date, :income_based_risk, :assets_based_risk, :income_over_assets_individual_risk_weight, :income_over_assets_cycle_risk_weight)
     end
 
-    portfolio_df[!, :application_id] = return_uuid.(portfolio_df[!, :total_default_risk])
-
     simulation_id = string(UUIDs.uuid4())
-    transform!(portfolio_df, :application_id => (v -> simulation_id) => :simulation_id)
 
-    portfolio_df[!, :application_date] = portfolio_df[!, :application_date] .+ 2019
+    portfolio_df = @chain portfolio_df begin
+        # Geometric mean of individual and cycle based risk
+        @transform(
+            :income_over_assets_gross_risk_weight = (:income_over_assets_individual_risk_weight * :income_over_assets_cycle_risk_weight)^0.5
+        )
+
+        # Weighted average of income risk and asset risk, which is a function of application_date and individual attributes
+        @transform(
+            :total_default_risk = (:income_over_assets_gross_risk_weight * :income_based_risk) + ((1 - :income_over_assets_gross_risk_weight) * :assets_based_risk)
+        )
+        
+        # Simulate defaults based on risk
+        @transform(
+            :default = rand(Bernoulli(:total_default_risk)),
+            :application_id = string(UUIDs.uuid4()),
+            :simulation_id = simulation_id,
+            :application_date = :application_date + 2019
+        )
+    end
 
     file_path = "/app/$(simulation_id).parquet"
 
@@ -79,7 +80,6 @@ function generate_synthetic_data(n_applications, n_simulations)
     # Clear bucket of synthetic data...
     run(`aws s3 rm s3://alec/synthetic_data --recursive`)
 
-    df = DataFrame()
     for i = 1:n_simulations
         generate_synthetic_data(n_applications)
     end
