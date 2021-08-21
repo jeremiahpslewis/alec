@@ -1,4 +1,4 @@
-boto3==1.18.26
+boto3
 dagit==0.12.7
 dagster==0.12.7
 fsspec==2021.7.0

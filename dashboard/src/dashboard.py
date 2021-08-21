@@ -16,7 +16,7 @@ s3_alec = s3.Bucket("alec")
 simulation_ids = []
 scenario_ids = []
 
-if True:
+if False:
     for i in ["applications", "outcomes", "portfolios", "scenarios"]:
         file_paths_tmp = [f.key for f in s3_alec.objects.filter(Prefix=f"{i}/")]
         simulation_ids_tmp = [
@@ -43,7 +43,7 @@ if True:
 
     for scenario_id in scenario_ids:
         for simulation_id in simulation_ids:
-
+            print(f"Scenario: {scenario_id}, Simulation: {simulation_id}")
             app_df = pd.read_parquet(
                 f"s3://alec/applications/{scenario_id}/{simulation_id}.parquet"
             )
@@ -94,8 +94,6 @@ if True:
             df_summary_all["portfolio"] = "full_dataset"
 
             df_summary_full = df_summary_full.append(df_summary).append(df_summary_all)
-            df_summary_full.to_parquet("s3://alec/dashboard/summary_data.parquet")
-            df.to_parquet("s3://alec/dashboard/full_data.parquet")
 
 
 df_summary_full = pd.read_parquet("s3://alec/dashboard/summary_data.parquet")

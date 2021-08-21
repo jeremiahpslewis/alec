@@ -139,3 +139,5 @@ dmypy.json
 !dashboard/src/data/outcomes/*.parquet
 
 *.json
+
+!**/tmp*/**
