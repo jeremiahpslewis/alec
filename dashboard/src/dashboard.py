@@ -1,11 +1,16 @@
-import os
-
 import altair as alt
 import boto3
 import pandas as pd
 import streamlit as st
 
+st.set_page_config(
+    page_title="ALEC: Active Learning Experiment Credit",
+    page_icon="--",
+    layout="wide",
+)
+
 st.title("ALEC: Active Learning Experiment Credit")
+
 alt.data_transformers.disable_max_rows()
 
 s3 = boto3.resource("s3")
@@ -20,11 +25,14 @@ if False:
     for i in ["applications", "outcomes", "portfolios", "scenarios"]:
         file_paths_tmp = [f.key for f in s3_alec.objects.filter(Prefix=f"{i}/")]
         simulation_ids_tmp = [
-            simulation_id.split("/")[2].split(".")[0] for simulation_id in file_paths_tmp
+            simulation_id.split("/")[2].split(".")[0]
+            for simulation_id in file_paths_tmp
         ]
         simulation_ids.extend(simulation_ids_tmp)
 
-        scenario_ids_tmp = [simulation_id.split("/")[1] for simulation_id in file_paths_tmp]
+        scenario_ids_tmp = [
+            simulation_id.split("/")[1] for simulation_id in file_paths_tmp
+        ]
         scenario_ids.extend(scenario_ids_tmp)
 
     simulation_ids = pd.DataFrame({"simulation_id": simulation_ids})
@@ -95,36 +103,35 @@ if False:
 
             df_summary_full = df_summary_full.append(df_summary).append(df_summary_all)
 
+    df_summary_full.to_parquet("s3://alec/dashboard/summary_data.parquet")
 
 df_summary_full = pd.read_parquet("s3://alec/dashboard/summary_data.parquet")
-df = pd.read_parquet("s3://alec/dashboard/full_data.parquet")
 
-c = (
-    alt.Chart(df)
-    .mark_point()
-    .encode(
-        y=alt.Y(
-            "income_based_risk", title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
-        ),
-        x=alt.X(
-            "total_default_risk",
-            title="Counterfactual Default",
-            # axis=alt.Axis(format="%"),
-            # scale=pct_scale,
-        ),
-        # color="portfolio",
-        color="application_date"
-    )
-)
+# c = (
+#     alt.Chart(df)
+#     .mark_point()
+#     .encode(
+#         y=alt.Y(
+#             "income_based_risk", title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
+#         ),
+#         x=alt.X(
+#             "total_default_risk",
+#             title="Counterfactual Default",
+#             # axis=alt.Axis(format="%"),
+#             # scale=pct_scale,
+#         ),
+#         # color="portfolio",
+#         color="application_date"
+#     )
+# )
 
-st.write(c)
-
+# st.write(c)
 
 
 df_plot = df_summary_full[df_summary_full.application_date > 2020].copy()
 pct_scale = alt.Scale(domain=(0, 1))
 
-c = (
+a = (
     alt.Chart(df_plot)
     .mark_point(opacity=0.1)
     .encode(
@@ -141,7 +148,13 @@ c = (
     )
 )
 
-st.write(c)
+b = a.properties(height=500, width=1000)
+
+b = b.facet(
+    column="portfolio:N",
+)
+
+st.write(b)
 
 d = (
     alt.Chart(df_plot)
@@ -160,11 +173,11 @@ d = (
     )
 )
 
-c = c.mark_errorband(extent="ci", opacity=0.2) + d + d.mark_point()
+c = a.mark_errorband(extent="ci", opacity=0.2) + d + d.mark_point()
 
 c = c.properties(height=500, width=1000)
 c = c.facet(
     row="active_learning_spec:N",
-    column='business_to_research_ratio:N',
+    column="business_to_research_ratio:N",
 )
 st.write(c)

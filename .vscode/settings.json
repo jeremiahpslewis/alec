@@ -1,3 +1,4 @@
 {
-    "julia.environmentPath": "/Users/jeremiahlewis/.julia/environments/v1.6"
+    "julia.environmentPath": "/Users/jeremiahlewis/.julia/environments/v1.6",
+    "python.formatting.provider": "black"
 }

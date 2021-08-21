@@ -22,12 +22,12 @@ simulation_indices = ["simulation_id", "application_id"]
 simulation_metadata = [
     "counterfactual_default",
     "scenario_id",
-    "income_over_assets_individual_risk_weight",
-    "income_over_assets_cycle_risk_weight",
-    "income_over_assets_gross_risk_weight",
+    "financial_individual_risk",
+    "idiosyncratic_individual_risk"
+    "income_over_asset_cycle_risk_weight",
     "total_default_risk",
 ]
-X_vars = ["income_based_risk", "assets_based_risk", "application_date"]
+X_vars = ["income_based_risk", "asset_based_risk", "application_date"]
 y_var = ["default"]
 
 full_application_col_set = [*simulation_indices, *simulation_metadata, *X_vars]
@@ -120,9 +120,9 @@ def get_feature_pipeline():
     column_trans = ColumnTransformer(
         [
             (
-                "assets_based_risk",
+                "asset_based_risk",
                 StandardScaler(),
-                ["assets_based_risk"],
+                ["asset_based_risk"],
             ),
             (
                 "income_based_risk",

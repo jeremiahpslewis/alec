@@ -21,16 +21,14 @@ function generate_synthetic_data(n_applications)
     # Credit Default Dataset with Business Cycle Effects
     # Assume income, personal default risk, application rate are independent
     @model function individual_attributes()
-        income_based_risk ~ TruncatedNormal(0.3, 0.2, 0, 1)
-        assets_based_risk ~ TruncatedNormal(0.7, 0.2, 0, 1)
-        income_over_assets_individual_risk_weight ~ TruncatedNormal(0.5, 0.4, 0, 1)
+        income_based_risk ~ TruncatedNormal(0.3, 0.4, 0, 1)
+        asset_based_risk ~ TruncatedNormal(0.7, 0.4, 0, 1)
+        idiosyncratic_individual_risk ~ TruncatedNormal(0.5, 0.4, 0, 1)
     end
-
-    
 
     business_cycle_df = DataFrame(
         "application_date" => 1:n_periods,
-        "income_over_assets_cycle_risk_weight" => [0.01, 0.01, 0.05, 0.05, 0.1, 0.5, 0.9, 0.95, 0.95, 0.99, 0.99],
+        "income_over_asset_cycle_risk_weight" => [0.01, 0.01, 0.01, 0.05, 0.1, 0.5, 0.9, 0.95, 0.99, 0.99, 0.99],
     )
 
     individuals_df = DataFrame(sample(individual_attributes(), NUTS(1000, 0.65), n_applications))
@@ -38,20 +36,17 @@ function generate_synthetic_data(n_applications)
     portfolio_df = @chain individuals_df begin
         @transform(:application_date = @c repeat(1:n_periods, n_applications_per_period))
         leftjoin(business_cycle_df, on = :application_date)
-        @select(:application_date, :income_based_risk, :assets_based_risk, :income_over_assets_individual_risk_weight, :income_over_assets_cycle_risk_weight)
+        @select(:application_date, :income_based_risk, :asset_based_risk, :idiosyncratic_individual_risk, :income_over_asset_cycle_risk_weight)
     end
 
     simulation_id = string(UUIDs.uuid4())
 
     portfolio_df = @chain portfolio_df begin
-        # Geometric mean of individual and cycle based risk
-        @transform(
-            :income_over_assets_gross_risk_weight = (:income_over_assets_individual_risk_weight * :income_over_assets_cycle_risk_weight)^0.5
-        )
 
         # Weighted average of income risk and asset risk, which is a function of application_date and individual attributes
         @transform(
-            :total_default_risk = (:income_over_assets_gross_risk_weight * :income_based_risk) + ((1 - :income_over_assets_gross_risk_weight) * :assets_based_risk)
+            :financial_individual_risk = (:income_over_asset_cycle_risk_weight * :income_based_risk) + ((1 - :income_over_asset_cycle_risk_weight) * :asset_based_risk)
+            :total_default_risk = (:financial_individual_risk + :idiosyncratic_individual_risk) / 2
         )
         
         # Simulate defaults based on risk
