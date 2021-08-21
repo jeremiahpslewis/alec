@@ -20,6 +20,7 @@ function generate_synthetic_data(n_applications)
     # Delete this line
     # Credit Default Dataset with Business Cycle Effects
     # Assume income, personal default risk, application rate are independent
+    # TODO: Explain distribution choices
     @model function individual_attributes()
         income_based_risk ~ TruncatedNormal(0.3, 0.4, 0, 1)
         asset_based_risk ~ TruncatedNormal(0.7, 0.4, 0, 1)
@@ -43,12 +44,19 @@ function generate_synthetic_data(n_applications)
 
     portfolio_df = @chain portfolio_df begin
 
-        # Weighted average of income risk and asset risk, which is a function of application_date and individual attributes
+        
         @transform(
-            :financial_individual_risk = (:income_over_asset_cycle_risk_weight * :income_based_risk) + ((1 - :income_over_asset_cycle_risk_weight) * :asset_based_risk)
-            :total_default_risk = (:financial_individual_risk + :idiosyncratic_individual_risk) / 2
+            # Weighted average of individual's income risk and asset risk, weight is an increasing function of application_date
+            :financial_individual_risk = (:income_over_asset_cycle_risk_weight * :income_based_risk) + 
+                ((1 - :income_over_asset_cycle_risk_weight) * :asset_based_risk)
         )
         
+    
+        @transform(
+            # Total default risk is average of financial risk as calculated above and individual's idiosyncratic risk
+            :total_default_risk = (:financial_individual_risk + :idiosyncratic_individual_risk) / 2
+        )
+
         # Simulate defaults based on risk
         @transform(
             :default = rand(Bernoulli(:total_default_risk)),
