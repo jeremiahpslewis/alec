@@ -23,7 +23,7 @@ simulation_metadata = [
     "counterfactual_default",
     "scenario_id",
     "financial_individual_risk",
-    "idiosyncratic_individual_risk"
+    "idiosyncratic_individual_risk",
     "income_over_asset_cycle_risk_weight",
     "total_default_risk",
 ]
