@@ -10,9 +10,9 @@ using Chain
 using UUIDs
 using DataFrameMacros
 
-n_simulations = 50
+n_simulations = 7
 n_periods = 11
-n_applications_per_period = 1000
+n_applications_per_period = 60
 n_applications = n_periods * n_applications_per_period
 
 
