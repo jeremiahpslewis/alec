@@ -30,7 +30,11 @@ for simulation_id in simulation_ids:
     raw_df.reset_index(inplace=True, drop=True)
     df = df.append(raw_df)
 
-df_summary = df.groupby(["application_date", "simulation_id"]).default.mean().reset_index()
+df["total_default_risk_log_odds"] = df["logitp"] # remove after rerunning synthetic data
+
+df_summary = (
+    df.groupby(["application_date", "simulation_id"]).default.mean().reset_index()
+)
 # Empty bucket of alec objects
 
 p1 = (
@@ -38,7 +42,7 @@ p1 = (
     .mark_point()
     .encode(
         y=alt.Y(
-            "default",# title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
+            "default",  # title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
         ),
         x=alt.X(
             "application_date:N",
@@ -56,32 +60,85 @@ p1 = p1.properties(height=500, width=1000)
 
 st.write(p1)
 
-df_long = pd.melt(df, id_vars = ["application_date", "simulation_id"])
-df_long = df_long.loc[df_long.variable.isin(["income_based_risk", "asset_based_risk", "idiosyncratic_individual_risk"])].copy()
+df_long = pd.melt(df, id_vars=["application_date", "simulation_id"])
+df_long = df_long.loc[
+    df_long.variable.isin(
+        [
+            "income_based_risk",
+            "asset_based_risk",
+            "idiosyncratic_individual_risk",
+            "total_default_risk_log_odds",
+        ]
+    )
+].copy()
 df_long.loc[:, "value"] = df_long.value.astype(float)
 
 # Based on Altair Example: https://altair-viz.github.io/user_guide/transform/density.html#density-transform
-p2 = alt.Chart(
-    df_long,
-    width=300,
-    height=300   
-).transform_filter(
-    'isValid(datum.variable)'
-).transform_density(
-    'value',
-    groupby=['variable'],
-    as_=['risk_score', 'density'],
-    # extent=[0, 1],
-).mark_area().encode(
-    x="risk_score:Q",
-    y='density:Q',
-).facet(
-    column='variable:N',
-    # columns=4
+p2 = (
+    alt.Chart(df_long, width=300, height=300)
+    .transform_filter("isValid(datum.variable)")
+    .transform_density(
+        "value",
+        groupby=["variable", "application_date"],
+        as_=["risk_score", "density"],
+        # extent=[0, 1],
+    )
+    .mark_area(opacity=0.2)
+    .encode(x="risk_score:Q", y="density:Q", color="application_date:N")
+    .facet(
+        column="variable:N",
+    )
 )
 # p2 = p2.properties(height=500, width=1000)
 
 st.write(p2)
+
+
+p3 = (
+    alt.Chart(df)
+    .mark_point()
+    .encode(
+        y=alt.Y(
+            "total_default_risk",  # title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
+        ),
+        x=alt.X(
+            "income_based_risk",
+            # title="Counterfactual Default",
+            # axis=alt.Axis(format="%"),
+            # scale=pct_scale,
+        ),
+        # color="portfolio",
+        # color="application_date"
+    )
+    .facet(
+        column="application_date:N",
+    )    
+)
+
+st.write(p3)
+
+p4 = (
+    alt.Chart(df)
+    .mark_point()
+    .encode(
+        y=alt.Y(
+            "total_default_risk",  # title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
+        ),
+        x=alt.X(
+            "asset_based_risk",
+            # title="Counterfactual Default",
+            # axis=alt.Axis(format="%"),
+            # scale=pct_scale,
+        ),
+        # color="portfolio",
+        # color="application_date"
+    )
+    .facet(
+        column="application_date:N",
+    )    
+)
+
+st.write(p4)
 
 simulation_ids = []
 scenario_ids = []
