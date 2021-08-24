@@ -35,14 +35,16 @@ function generate_synthetic_data(n_applications_per_period, n_periods)
 
     business_cycle_df = DataFrame(
         "application_date" => 2020:(2020 + n_periods),
-        "income_over_asset_cycle_risk_weight" => [0.01, 0.01, 0.01, 0.05, 0.1, 0.5, 0.9, 0.95, 0.99, 0.99, 0.99],
+        "income_over_asset_cycle_risk_weight" => [0.01, 0.01, 0.01, 0.05, 0.1, 0.5, 0.5, 0.9, 0.95, 0.99, 0.99, 0.99],
     )
 
     portfolio_df = DataFrame()
     for x in eachrow(business_cycle_df)
         one_cycle_df = DataFrame(rand(loan_data_generator(x.income_over_asset_cycle_risk_weight), n_applications_per_period))
         one_cycle_df = @chain one_cycle_df begin
-            @transform(:application_date = x.application_date, :income_over_asset_cycle_risk_weight = x.income_over_asset_cycle_risk_weight)
+            @transform(:application_date = x.application_date,
+                       :income_over_asset_cycle_risk_weight = x.income_over_asset_cycle_risk_weight,
+                       :default = :default * 1 # convert bool to int)
         end
         append!(portfolio_df, one_cycle_df)
     end
