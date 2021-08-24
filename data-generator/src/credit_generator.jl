@@ -1,9 +1,9 @@
 # using Pkg
 # Pkg.activate("/app")
 
-using Turing
+using Soss
+using MeasureTheory
 using StatsPlots
-using Distributions
 using Parquet
 using DataFrames
 using Chain
@@ -13,56 +13,46 @@ using DataFrameMacros
 n_simulations = 7
 n_periods = 11
 n_applications_per_period = 60
-n_applications = n_periods * n_applications_per_period
-
 
 function generate_synthetic_data(n_applications)
     # Delete this line
     # Credit Default Dataset with Business Cycle Effects
     # Assume income, personal default risk, application rate are independent
     # TODO: Explain distribution choices
-    @model function individual_attributes()
-        income_based_risk ~ TruncatedNormal(0.3, 0.4, 0, 1)
-        asset_based_risk ~ TruncatedNormal(0.7, 0.4, 0, 1)
-        idiosyncratic_individual_risk ~ TruncatedNormal(0.5, 0.4, 0, 1)
-    end
-
-    business_cycle_df = DataFrame(
-        "application_date" => 1:n_periods,
-        "income_over_asset_cycle_risk_weight" => [0.01, 0.01, 0.01, 0.05, 0.1, 0.5, 0.9, 0.95, 0.99, 0.99, 0.99],
-    )
-
-    individuals_df = DataFrame(sample(individual_attributes(), NUTS(1000, 0.65), n_applications))
-
-    portfolio_df = @chain individuals_df begin
-        @transform(:application_date = @c repeat(1:n_periods, n_applications_per_period))
-        leftjoin(business_cycle_df, on = :application_date)
-        @select(:application_date, :income_based_risk, :asset_based_risk, :idiosyncratic_individual_risk, :income_over_asset_cycle_risk_weight)
-    end
 
     simulation_id = string(UUIDs.uuid4())
 
-    portfolio_df = @chain portfolio_df begin
+    loan_data_generator = @model income_over_asset_cycle_risk_weight begin
+        income_based_risk ~ Normal(0, 1)
+        asset_based_risk ~ Normal(0, 1)
+        idiosyncratic_individual_risk ~ Normal(0, 1)
+        logitp = idiosyncratic_individual_risk + income_over_asset_cycle_risk_weight * income_based_risk + (1 - income_over_asset_cycle_risk_weight) * asset_based_risk
+        total_default_risk = logistic(logitp)
+        z ~ Bernoulli(logistic(logitp))
+    end
 
-        
-        @transform(
-            # Weighted average of individual's income risk and asset risk, weight is an increasing function of application_date
-            :financial_individual_risk = (:income_over_asset_cycle_risk_weight * :income_based_risk) + 
-                ((1 - :income_over_asset_cycle_risk_weight) * :asset_based_risk)
-        )
-        
-    
-        @transform(
-            # Total default risk is average of financial risk as calculated above and individual's idiosyncratic risk
-            :total_default_risk = (:financial_individual_risk + :idiosyncratic_individual_risk) / 2
-        )
+    n_applications_per_period = 10
+
+    business_cycle_df = DataFrame(
+        "application_date" => 2020:(2020 + n_periods),
+        "income_over_asset_cycle_risk_weight" => [0.01, 0.01, 0.01, 0.05, 0.1, 0.5, 0.9, 0.95, 0.99, 0.99, 0.99],
+    )
+
+    portfolio_df = DataFrame()
+    for x in eachrow(business_cycle_df)
+        one_cycle_df = DataFrame(rand(loan_data_generator(x.income_over_asset_cycle_risk_weight), n_applications_per_period))
+        one_cycle_df = @chain one_cycle_df begin
+            @transform(:application_date = x.application_date, :income_over_asset_cycle_risk_weight = x.income_over_asset_cycle_risk_weight)
+        end
+        append!(portfolio_df, one_cycle_df)
+    end
+
+    portfolio_df = @chain portfolio_df begin
 
         # Simulate defaults based on risk
         @transform(
-            :default = rand(Bernoulli(:total_default_risk)),
             :application_id = string(UUIDs.uuid4()),
             :simulation_id = simulation_id,
-            :application_date = :application_date + 2019
         )
     end
 

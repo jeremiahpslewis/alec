@@ -16,7 +16,72 @@ alt.data_transformers.disable_max_rows()
 s3 = boto3.resource("s3")
 s3_alec = s3.Bucket("alec")
 
+# Visualize Synthetic Data
+
+simulation_ids = [f.key for f in s3_alec.objects.filter(Prefix="synthetic_data/")]
+simulation_ids = [
+    simulation_id.split("/")[1].split(".")[0] for simulation_id in simulation_ids
+]
+
+df = pd.DataFrame()
+for simulation_id in simulation_ids:
+    raw_df = pd.read_parquet(f"s3://alec/synthetic_data/{simulation_id}.parquet")
+    raw_df = raw_df.loc[raw_df.simulation_id == simulation_id].copy()
+    raw_df.reset_index(inplace=True, drop=True)
+    df = df.append(raw_df)
+
+df_summary = df.groupby(["application_date", "simulation_id"]).default.mean().reset_index()
 # Empty bucket of alec objects
+
+p1 = (
+    alt.Chart(df_summary)
+    .mark_point()
+    .encode(
+        y=alt.Y(
+            "default",# title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
+        ),
+        x=alt.X(
+            "application_date:N",
+            # title="Counterfactual Default",
+            # axis=alt.Axis(format="%"),
+            # scale=pct_scale,
+        ),
+        # color="portfolio",
+        # color="application_date"
+    )
+)
+
+p1 = p1.mark_errorband(extent="ci", opacity=0.2) + p1
+p1 = p1.properties(height=500, width=1000)
+
+st.write(p1)
+
+df_long = pd.melt(df, id_vars = ["application_date", "simulation_id"])
+df_long = df_long.loc[df_long.variable.isin(["income_based_risk", "asset_based_risk", "idiosyncratic_individual_risk"])].copy()
+df_long.loc[:, "value"] = df_long.value.astype(float)
+
+# Based on Altair Example: https://altair-viz.github.io/user_guide/transform/density.html#density-transform
+p2 = alt.Chart(
+    df_long,
+    width=300,
+    height=300   
+).transform_filter(
+    'isValid(datum.variable)'
+).transform_density(
+    'value',
+    groupby=['variable'],
+    as_=['risk_score', 'density'],
+    # extent=[0, 1],
+).mark_area().encode(
+    x="risk_score:Q",
+    y='density:Q',
+).facet(
+    column='variable:N',
+    # columns=4
+)
+# p2 = p2.properties(height=500, width=1000)
+
+st.write(p2)
 
 simulation_ids = []
 scenario_ids = []
