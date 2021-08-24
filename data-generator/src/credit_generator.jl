@@ -28,7 +28,7 @@ function generate_synthetic_data(n_applications_per_period, n_periods)
         idiosyncratic_individual_risk ~ Normal(0, 1)
         logitp = idiosyncratic_individual_risk + income_over_asset_cycle_risk_weight * income_based_risk + (1 - income_over_asset_cycle_risk_weight) * asset_based_risk
         total_default_risk = logistic(logitp)
-        z ~ Bernoulli(logistic(logitp))
+        default ~ Bernoulli(logistic(logitp))
     end
 
     n_applications_per_period = 10
