@@ -14,7 +14,7 @@ n_simulations = 7
 n_periods = 11
 n_applications_per_period = 60
 
-function generate_synthetic_data(n_applications)
+function generate_synthetic_data(n_applications_per_period, n_periods)
     # Delete this line
     # Credit Default Dataset with Business Cycle Effects
     # Assume income, personal default risk, application rate are independent
@@ -68,17 +68,17 @@ function generate_synthetic_data(n_applications)
     return portfolio_df
 end
 
-function generate_synthetic_data(n_applications, n_simulations)
+function generate_synthetic_data(n_applications_per_period, n_periods, n_simulations)
 
     # Clear bucket of synthetic data...
     run(`aws s3 rm s3://alec/synthetic_data --recursive`)
 
     for i = 1:n_simulations
-        generate_synthetic_data(n_applications)
+        generate_synthetic_data(n_applications_per_period, n_periods)
     end
 end
 
-generate_synthetic_data(n_applications, n_simulations)
+generate_synthetic_data(n_applications_per_period, n_periods, n_simulations)
 
 # @df portfolio_df boxplot(:default, :total_default_risk)
 
