@@ -44,7 +44,8 @@ function generate_synthetic_data(n_applications_per_period, n_periods)
         one_cycle_df = @chain one_cycle_df begin
             @transform(:application_date = x.application_date,
                        :income_over_asset_cycle_risk_weight = x.income_over_asset_cycle_risk_weight,
-                       :default = :default * 1 # convert bool to int)
+                       :default = :default * 1 # convert bool to int
+                       )
         end
         append!(portfolio_df, one_cycle_df)
     end
