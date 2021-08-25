@@ -30,16 +30,15 @@ function generate_synthetic_data(n_applications_per_period)
         default ~ Bernoulli(total_default_risk)
     end
 
-    n_applications_per_period = 10
     income_based_risk_var = [0.5, 0.5, 0.5, 0.5, 0.5, 2, 2, 2, 2, 2]
     asset_based_risk_var = [2, 2, 2, 2, 2, 0.5, 0.5, 0.5, 0.5, 0.5]
-    n_periods = length(income_based_risk_var)
 
     business_cycle_df = DataFrame(
-        "application_date" => 2020:(2020 + (n_periods - 1)),
         "income_based_risk_var" => income_based_risk_var,
         "asset_based_risk_var" => asset_based_risk_var,
     )
+    business_cycle_df[!, "application_date"] = 2020:(2020 + (n_periods - 1))
+
 
     portfolio_df = DataFrame()
     for x in eachrow(business_cycle_df)
