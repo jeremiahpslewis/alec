@@ -37,6 +37,7 @@ function generate_synthetic_data(n_applications_per_period)
         "income_based_risk_var" => income_based_risk_var,
         "asset_based_risk_var" => asset_based_risk_var,
     )
+    n_periods = nrow(business_cycle_df)
     business_cycle_df[!, "application_date"] = 2020:(2020 + (n_periods - 1))
 
 
