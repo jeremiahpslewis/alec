@@ -46,8 +46,9 @@ function generate_synthetic_data(n_applications_per_period)
         one_cycle_df = DataFrame(rand(loan_data_generator(x.income_based_risk_var, x.asset_based_risk_var), n_applications_per_period))
         one_cycle_df = @chain one_cycle_df begin
             @transform(:application_date = x.application_date,
-                       :income_over_asset_cycle_risk_weight = x.income_over_asset_cycle_risk_weight,
-                       :default = :default * 1 # convert bool to int
+                       :default = :default * 1, # convert bool to int
+                       :income_based_risk_var = x.income_based_risk_var,
+                       :asset_based_risk_var = x.asset_based_risk_var,
                        )
         end
         append!(portfolio_df, one_cycle_df)

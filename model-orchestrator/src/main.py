@@ -23,9 +23,11 @@ simulation_metadata = [
     "counterfactual_default",
     "scenario_id",
     "idiosyncratic_individual_risk",
-    "income_over_asset_cycle_risk_weight",
     "total_default_risk",
+    "income_based_risk_var",
+    "asset_based_risk_var",
 ]
+
 X_vars = ["income_based_risk", "asset_based_risk", "application_date"]
 y_var = ["default"]
 
