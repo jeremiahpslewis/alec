@@ -3,6 +3,8 @@ import boto3
 import pandas as pd
 import streamlit as st
 
+pct_scale = alt.Scale(domain=(0, 1))
+
 st.set_page_config(
     page_title="ALEC: Active Learning Experiment Credit",
     page_icon="--",
@@ -24,6 +26,7 @@ simulation_ids = [
 ]
 
 df = pd.DataFrame()
+
 for simulation_id in simulation_ids:
     raw_df = pd.read_parquet(f"s3://alec/synthetic_data/{simulation_id}.parquet")
     raw_df = raw_df.loc[raw_df.simulation_id == simulation_id].copy()
@@ -40,21 +43,21 @@ p1 = (
     .mark_point()
     .encode(
         y=alt.Y(
-            "default",  # title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
+            "default",
+            title="Default Rate",
+            scale=pct_scale,
         ),
         x=alt.X(
             "application_date:N",
-            # title="Counterfactual Default",
-            # axis=alt.Axis(format="%"),
-            # scale=pct_scale,
+            title="Application Date",
+            axis=alt.Axis(labelAngle=0),
         ),
-        # color="portfolio",
-        # color="application_date"
+        color=alt.Color("simulation_id", title="Simulation"),
     )
 )
 
 p1 = p1.mark_errorband(extent="ci", opacity=0.2) + p1
-p1 = p1.properties(height=500, width=1000)
+p1 = p1.properties(height=500, width=1000, title="Default Rate over Time")
 
 st.write(p1)
 
@@ -249,7 +252,6 @@ df_summary_full = pd.read_parquet("s3://alec/dashboard/summary_data.parquet")
 
 
 df_plot = df_summary_full[df_summary_full.application_date > 2020].copy()
-pct_scale = alt.Scale(domain=(0, 1))
 
 a = (
     alt.Chart(df_plot)
