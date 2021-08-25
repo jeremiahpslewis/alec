@@ -30,8 +30,6 @@ for simulation_id in simulation_ids:
     raw_df.reset_index(inplace=True, drop=True)
     df = df.append(raw_df)
 
-df["total_default_risk_log_odds"] = df["logitp"] # remove after rerunning synthetic data
-
 df_summary = (
     df.groupby(["application_date", "simulation_id"]).default.mean().reset_index()
 )
@@ -112,7 +110,7 @@ p3 = (
     )
     .facet(
         column="application_date:N",
-    )    
+    )
 )
 
 st.write(p3)
@@ -135,7 +133,7 @@ p4 = (
     )
     .facet(
         column="application_date:N",
-    )    
+    )
 )
 
 st.write(p4)

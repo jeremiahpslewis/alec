@@ -133,7 +133,7 @@ def get_feature_pipeline():
                 sklearn.preprocessing.PolynomialFeatures(degree=4),
                 ["application_date"],
             ),
-                    ],
+        ],
         remainder="drop",
     )
     return column_trans
