@@ -11,10 +11,9 @@ using UUIDs
 using DataFrameMacros
 
 n_simulations = 7
-n_periods = 6
 n_applications_per_period = 250
 
-function generate_synthetic_data(n_applications_per_period, n_periods)
+function generate_synthetic_data(n_applications_per_period)
     # Delete this line
     # Credit Default Dataset with Business Cycle Effects
     # Assume income, personal default risk, application rate are independent
@@ -32,10 +31,12 @@ function generate_synthetic_data(n_applications_per_period, n_periods)
     end
 
     n_applications_per_period = 10
+    income_over_asset_cycle_risk_weight_per_period = [0.1, 0.1, 0.1, 0.9, 0.9, 0.9]
+    n_periods = length(income_over_asset_cycle_risk_weight_per_period)
 
     business_cycle_df = DataFrame(
         "application_date" => 2020:(2020 + n_periods),
-        "income_over_asset_cycle_risk_weight" => [0.1, 0.1, 0.1, 0.9, 0.9, 0.9],
+        "income_over_asset_cycle_risk_weight" => income_over_asset_cycle_risk_weight_per_period,
     )
 
     portfolio_df = DataFrame()
@@ -71,17 +72,17 @@ function generate_synthetic_data(n_applications_per_period, n_periods)
     return portfolio_df
 end
 
-function generate_synthetic_data(n_applications_per_period, n_periods, n_simulations)
+function generate_synthetic_data(n_applications_per_period, n_simulations)
 
     # Clear bucket of synthetic data...
     run(`aws s3 rm s3://alec/synthetic_data --recursive`)
 
     for i = 1:n_simulations
-        generate_synthetic_data(n_applications_per_period, n_periods)
+        generate_synthetic_data(n_applications_per_period)
     end
 end
 
-generate_synthetic_data(n_applications_per_period, n_periods, n_simulations)
+generate_synthetic_data(n_applications_per_period, n_simulations)
 
 # @df portfolio_df boxplot(:default, :total_default_risk)
 
