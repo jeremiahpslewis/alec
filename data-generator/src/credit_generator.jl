@@ -35,7 +35,7 @@ function generate_synthetic_data(n_applications_per_period)
     n_periods = length(income_over_asset_cycle_risk_weight_per_period)
 
     business_cycle_df = DataFrame(
-        "application_date" => 2020:(2020 + n_periods),
+        "application_date" => 2020:(2020 + (n_periods - 1)),
         "income_over_asset_cycle_risk_weight" => income_over_asset_cycle_risk_weight_per_period,
     )
 
