@@ -57,7 +57,7 @@ p1 = (
 )
 
 p1 = p1.mark_errorband(extent="ci", opacity=0.2) + p1
-p1 = p1.properties(height=500, width=1000, title="Default Rate over Time")
+p1 = p1.properties(height=500, width=1000, title="Simulation Defaults over Time")
 
 st.write(p1)
 
@@ -84,8 +84,12 @@ p2 = (
         as_=["risk_score", "density"],
         # extent=[0, 1],
     )
-    .mark_area(opacity=0.2)
-    .encode(x="risk_score:Q", y="density:Q", color="application_date:N")
+    .mark_area(opacity=0.8)
+    .encode(
+        x=alt.X("risk_score:Q", title=""),
+        y=alt.Y("density:Q", title="Density"),
+        color="application_date:N",
+    )
     .facet(
         column="variable:N",
     )

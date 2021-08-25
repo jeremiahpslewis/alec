@@ -10,8 +10,8 @@ using Chain
 using UUIDs
 using DataFrameMacros
 
-n_simulations = 7
-n_applications_per_period = 250
+n_simulations = 3
+n_applications_per_period = 1000
 
 function generate_synthetic_data(n_applications_per_period)
     # Delete this line
@@ -21,27 +21,29 @@ function generate_synthetic_data(n_applications_per_period)
 
     simulation_id = string(UUIDs.uuid4())
 
-    loan_data_generator = @model income_over_asset_cycle_risk_weight begin
-        income_based_risk ~ Normal(0, 4)
-        asset_based_risk ~ Normal(0, 4)
-        idiosyncratic_individual_risk ~ Normal(0, 1)
-        total_default_risk_log_odds = idiosyncratic_individual_risk + income_over_asset_cycle_risk_weight * income_based_risk + (1 - income_over_asset_cycle_risk_weight) * asset_based_risk
+    loan_data_generator = @model income_based_risk_var, asset_based_risk_var begin
+        income_based_risk ~ Normal(0, income_based_risk_var)
+        asset_based_risk ~ Normal(0, asset_based_risk_var)
+        idiosyncratic_individual_risk ~ Normal(0, 0.1)
+        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + asset_based_risk
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ Bernoulli(total_default_risk)
     end
 
     n_applications_per_period = 10
-    income_over_asset_cycle_risk_weight_per_period = [0.1, 0.1, 0.1, 0.9, 0.9, 0.9]
-    n_periods = length(income_over_asset_cycle_risk_weight_per_period)
+    income_based_risk_var = [0.5, 0.5, 0.5, 0.5, 0.5, 2, 2, 2, 2, 2]
+    asset_based_risk_var = [2, 2, 2, 2, 2, 0.5, 0.5, 0.5, 0.5, 0.5]
+    n_periods = length(income_based_risk_var)
 
     business_cycle_df = DataFrame(
         "application_date" => 2020:(2020 + (n_periods - 1)),
-        "income_over_asset_cycle_risk_weight" => income_over_asset_cycle_risk_weight_per_period,
+        "income_based_risk_var" => income_based_risk_var,
+        "asset_based_risk_var" => asset_based_risk_var,
     )
 
     portfolio_df = DataFrame()
     for x in eachrow(business_cycle_df)
-        one_cycle_df = DataFrame(rand(loan_data_generator(x.income_over_asset_cycle_risk_weight), n_applications_per_period))
+        one_cycle_df = DataFrame(rand(loan_data_generator(x.income_based_risk_var, x.asset_based_risk_var), n_applications_per_period))
         one_cycle_df = @chain one_cycle_df begin
             @transform(:application_date = x.application_date,
                        :income_over_asset_cycle_risk_weight = x.income_over_asset_cycle_risk_weight,
