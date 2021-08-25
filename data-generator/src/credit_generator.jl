@@ -11,8 +11,8 @@ using UUIDs
 using DataFrameMacros
 
 n_simulations = 7
-n_periods = 11
-n_applications_per_period = 60
+n_periods = 6
+n_applications_per_period = 250
 
 function generate_synthetic_data(n_applications_per_period, n_periods)
     # Delete this line
@@ -23,8 +23,8 @@ function generate_synthetic_data(n_applications_per_period, n_periods)
     simulation_id = string(UUIDs.uuid4())
 
     loan_data_generator = @model income_over_asset_cycle_risk_weight begin
-        income_based_risk ~ Normal(0, 1)
-        asset_based_risk ~ Normal(0, 1)
+        income_based_risk ~ Normal(0, 4)
+        asset_based_risk ~ Normal(0, 4)
         idiosyncratic_individual_risk ~ Normal(0, 1)
         total_default_risk_log_odds = idiosyncratic_individual_risk + income_over_asset_cycle_risk_weight * income_based_risk + (1 - income_over_asset_cycle_risk_weight) * asset_based_risk
         total_default_risk = logistic(total_default_risk_log_odds)
@@ -35,7 +35,7 @@ function generate_synthetic_data(n_applications_per_period, n_periods)
 
     business_cycle_df = DataFrame(
         "application_date" => 2020:(2020 + n_periods),
-        "income_over_asset_cycle_risk_weight" => [0.01, 0.01, 0.01, 0.05, 0.1, 0.5, 0.5, 0.9, 0.95, 0.99, 0.99, 0.99],
+        "income_over_asset_cycle_risk_weight" => [0.1, 0.1, 0.1, 0.9, 0.9, 0.9],
     )
 
     portfolio_df = DataFrame()

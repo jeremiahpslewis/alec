@@ -141,7 +141,7 @@ st.write(p4)
 simulation_ids = []
 scenario_ids = []
 
-if False:
+if True:
     for i in ["applications", "outcomes", "portfolios", "scenarios"]:
         file_paths_tmp = [f.key for f in s3_alec.objects.filter(Prefix=f"{i}/")]
         simulation_ids_tmp = [
