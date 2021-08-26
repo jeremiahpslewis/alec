@@ -108,46 +108,40 @@ p2 = (
 st.write(p2)
 
 p3 = (
-    alt.Chart(df)
-    .mark_point()
+    alt.Chart(df, title="Risk Score Distribution")
+    .transform_density(
+        "income_based_risk",
+        groupby=["application_date"],
+        as_=["income_based_risk", "density"],
+        # extent=[0, 1],
+    )
+    .mark_line()
     .encode(
-        y=alt.Y(
-            "total_default_risk",  # title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
-        ),
-        x=alt.X(
-            "income_based_risk",
-            # title="Counterfactual Default",
-            # axis=alt.Axis(format="%"),
-            # scale=pct_scale,
-        ),
-        # color="portfolio",
-        # color="application_date"
+        x=alt.X("income_based_risk:Q", title="Income Based Risk (Log Odds Scale)"),
+        y=alt.Y("density:Q", title="Density"),
     )
     .facet(
-        column="application_date:N",
+        column=alt.Column("application_date:N", title="Application Date"),
     )
 )
 
 st.write(p3)
 
 p4 = (
-    alt.Chart(df)
-    .mark_point()
+    alt.Chart(df, title="Risk Score Distribution")
+    .transform_density(
+        "asset_based_risk",
+        groupby=["application_date"],
+        as_=["asset_based_risk", "density"],
+        # extent=[0, 1],
+    )
+    .mark_line()
     .encode(
-        y=alt.Y(
-            "total_default_risk",  # title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
-        ),
-        x=alt.X(
-            "asset_based_risk",
-            # title="Counterfactual Default",
-            # axis=alt.Axis(format="%"),
-            # scale=pct_scale,
-        ),
-        # color="portfolio",
-        # color="application_date"
+        x=alt.X("asset_based_risk:Q", title="Asset Based Risk (Log Odds Scale)"),
+        y=alt.Y("density:Q", title="Density"),
     )
     .facet(
-        column="application_date:N",
+        column=alt.Column("application_date:N", title="Application Date"),
     )
 )
 
@@ -158,11 +152,11 @@ p5 = (
     .mark_point()
     .encode(
         y=alt.Y(
-            "total_default_risk",  # title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
+            "total_default_risk",  title="Default Probability", axis=alt.Axis(format="%"),
         ),
         x=alt.X(
             "income_based_risk",
-            # title="Counterfactual Default",
+            title="Income Based Risk (Log Odds)",
             # axis=alt.Axis(format="%"),
             # scale=pct_scale,
         ),
@@ -181,11 +175,11 @@ p6 = (
     .mark_point()
     .encode(
         y=alt.Y(
-            "total_default_risk",  # title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
+            "total_default_risk",  title="Default Probability", axis=alt.Axis(format="%"),
         ),
         x=alt.X(
             "asset_based_risk",
-            # title="Counterfactual Default",
+            title="Asset Based Risk (Log Odds)",
             # axis=alt.Axis(format="%"),
             # scale=pct_scale,
         ),
