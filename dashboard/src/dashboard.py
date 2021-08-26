@@ -73,12 +73,19 @@ df_long = df_long.loc[
     )
 ].copy()
 df_long.loc[:, "value"] = df_long.value.astype(float)
-df_long.loc[:, 'variable'] = df_long.variable.str.title().str.replace("_", " ")
+df_long.loc[:, "variable"] = df_long.variable.str.title().str.replace("_", " ")
 
 # Based on Altair Example: https://altair-viz.github.io/user_guide/transform/density.html#density-transform
 p2 = (
-    alt.Chart(df_long[df_long.variable.isin(["Idiosyncratic Individual Risk", "Total Default Risk Log Odds"])], width=300, height=300)
-    .transform_filter("isValid(datum.variable)")
+    alt.Chart(
+        df_long[
+            df_long.variable.isin(
+                ["Idiosyncratic Individual Risk", "Total Default Risk Log Odds"]
+            )
+        ],
+        width=300,
+        height=300,
+    )
     .transform_density(
         "value",
         groupby=["variable", "application_date"],
@@ -93,9 +100,8 @@ p2 = (
     )
     .facet(
         column=alt.Column("variable:N", title="Distribution of Risk Parameters"),
-    ).resolve_scale(
-    x='independent'
-)
+    )
+    .resolve_scale(x="independent")
 )
 # p2 = p2.properties(height=500, width=1000)
 
@@ -146,6 +152,53 @@ p4 = (
 )
 
 st.write(p4)
+
+p5 = (
+    alt.Chart(df)
+    .mark_point()
+    .encode(
+        y=alt.Y(
+            "total_default_risk",  # title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
+        ),
+        x=alt.X(
+            "income_based_risk",
+            # title="Counterfactual Default",
+            # axis=alt.Axis(format="%"),
+            # scale=pct_scale,
+        ),
+        # color="portfolio",
+        # color="application_date"
+    )
+    .facet(
+        column="application_date:N",
+    )
+)
+
+st.write(p5)
+
+p6 = (
+    alt.Chart(df)
+    .mark_point()
+    .encode(
+        y=alt.Y(
+            "total_default_risk",  # title="Asset-based Risk", axis=alt.Axis(labelAngle=0)
+        ),
+        x=alt.X(
+            "asset_based_risk",
+            # title="Counterfactual Default",
+            # axis=alt.Axis(format="%"),
+            # scale=pct_scale,
+        ),
+        # color="portfolio",
+        # color="application_date"
+    )
+    .facet(
+        column="application_date:N",
+    )
+)
+
+st.write(p6)
+
 
 simulation_ids = []
 scenario_ids = []
