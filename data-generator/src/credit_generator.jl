@@ -10,8 +10,16 @@ using Chain
 using UUIDs
 using DataFrameMacros
 
-n_simulations = 3
-n_applications_per_period = 1000
+mode = "test"
+# mode = "prod"
+
+if mode == "test"
+    n_simulations = 3
+    n_applications_per_period = 60
+elseif mode == "prod"
+    n_simulations = 30
+    n_applications_per_period = 1000
+end
 
 function generate_synthetic_data(n_applications_per_period)
     # Delete this line

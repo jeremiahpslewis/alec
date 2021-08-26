@@ -73,10 +73,11 @@ df_long = df_long.loc[
     )
 ].copy()
 df_long.loc[:, "value"] = df_long.value.astype(float)
+df_long.loc[:, 'variable'] = df_long.variable.str.title().str.replace("_", " ")
 
 # Based on Altair Example: https://altair-viz.github.io/user_guide/transform/density.html#density-transform
 p2 = (
-    alt.Chart(df_long, width=300, height=300)
+    alt.Chart(df_long[df_long.variable.isin(["Idiosyncratic Individual Risk", "Total Default Risk Log Odds"])], width=300, height=300)
     .transform_filter("isValid(datum.variable)")
     .transform_density(
         "value",
@@ -84,15 +85,17 @@ p2 = (
         as_=["risk_score", "density"],
         # extent=[0, 1],
     )
-    .mark_area(opacity=0.8)
+    .mark_line(opacity=0.8)
     .encode(
         x=alt.X("risk_score:Q", title=""),
         y=alt.Y("density:Q", title="Density"),
-        color="application_date:N",
+        color=alt.Color("application_date:N", title="Application Date"),
     )
     .facet(
-        column="variable:N",
-    )
+        column=alt.Column("variable:N", title="testtest"),
+    ).resolve_scale(
+    x='independent'
+)
 )
 # p2 = p2.properties(height=500, width=1000)
 
