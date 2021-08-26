@@ -9,6 +9,7 @@ using DataFrames
 using Chain
 using UUIDs
 using DataFrameMacros
+using GLM
 
 mode = "test"
 # mode = "prod"
@@ -30,16 +31,16 @@ function generate_synthetic_data(n_applications_per_period)
     simulation_id = string(UUIDs.uuid4())
 
     loan_data_generator = @model income_based_risk_var, asset_based_risk_var begin
-        income_based_risk ~ Normal(0, income_based_risk_var)
-        asset_based_risk ~ Normal(0, asset_based_risk_var)
-        idiosyncratic_individual_risk ~ Normal(0, 0.1)
+        income_based_risk ~ MeasureTheory.Normal(0, income_based_risk_var)
+        asset_based_risk ~ MeasureTheory.Normal(0, asset_based_risk_var)
+        idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 0.1)
         total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + asset_based_risk
         total_default_risk = logistic(total_default_risk_log_odds)
-        default ~ Bernoulli(total_default_risk)
+        default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
 
-    income_based_risk_var = [0.1, 0.1, 0.1, 0.1, 0.1, 2, 2, 2, 2, 2]
-    asset_based_risk_var = [2, 2, 2, 2, 2, 0.5, 0.1, 0.1, 0.1, 0.1]
+    income_based_risk_var = [0.1, 0.1, 0.1, 0.1, 0.1, 4, 4, 4, 4, 4]
+    asset_based_risk_var = [4, 4, 4, 4, 4, 0.5, 0.1, 0.1, 0.1, 0.1]
 
     business_cycle_df = DataFrame(
         "income_based_risk_var" => income_based_risk_var,
@@ -106,3 +107,23 @@ generate_synthetic_data(n_applications_per_period, n_simulations)
 # @df tmp_df plot(:application_date, :default_mean)
 
 # @df business_cycle_df plot!(:application_date, :business_cycle_default_risk)
+
+# Analyze two halves of training data (income regime and asset regime)
+# Results are that the z-scores and p values for the respective coefficient are very high
+# for the dominant variable and quite low for the non-dominant one...
+
+if false
+    fm = @formula(default ~ income_based_risk + asset_based_risk)
+
+    portfolio_df_subset = @chain portfolio_df begin
+        @subset(:application_date >= 2025)
+    end;
+
+    logit = glm(fm, portfolio_df_subset, GLM.Binomial(), LogitLink())
+
+    portfolio_df_subset = @chain portfolio_df begin
+        @subset(:application_date < 2025)
+    end;
+
+    logit = glm(fm, portfolio_df_subset, GLM.Binomial(), LogitLink())
+end
