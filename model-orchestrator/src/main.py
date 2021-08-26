@@ -28,7 +28,7 @@ simulation_metadata = [
     "asset_based_risk_var",
 ]
 
-X_vars = ["income_based_risk", "asset_based_risk", "application_date"]
+X_vars = ["income_based_risk", "asset_based_risk"]
 y_var = ["default"]
 
 full_application_col_set = [*simulation_indices, *simulation_metadata, *X_vars]
@@ -122,18 +122,13 @@ def get_feature_pipeline():
         [
             (
                 "asset_based_risk",
-                StandardScaler(),
+                "passthrough",
                 ["asset_based_risk"],
             ),
             (
                 "income_based_risk",
-                StandardScaler(),
+                "passthrough",
                 ["income_based_risk"],
-            ),
-            (
-                "application_date",
-                sklearn.preprocessing.PolynomialFeatures(degree=4),
-                ["application_date"],
             ),
         ],
         remainder="drop",
@@ -220,7 +215,6 @@ def train_model(
     training_data: data collected from previous loans granted, as pd.DataFrame
     model: machine learning model (pipeline) which can be applied to training data
     """
-    print("run model train!")
     training_df = prepare_training_data(application_df, portfolio_df, outcome_df)
 
     # NOTE: Currently all cases without observed default are dropped for ML model!
