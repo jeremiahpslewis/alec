@@ -38,8 +38,8 @@ function generate_synthetic_data(n_applications_per_period)
         default ~ Bernoulli(total_default_risk)
     end
 
-    income_based_risk_var = [0.5, 0.5, 0.5, 0.5, 0.5, 2, 2, 2, 2, 2]
-    asset_based_risk_var = [2, 2, 2, 2, 2, 0.5, 0.5, 0.5, 0.5, 0.5]
+    income_based_risk_var = [0.1, 0.1, 0.1, 0.1, 0.1, 2, 2, 2, 2, 2]
+    asset_based_risk_var = [2, 2, 2, 2, 2, 0.5, 0.1, 0.1, 0.1, 0.1]
 
     business_cycle_df = DataFrame(
         "income_based_risk_var" => income_based_risk_var,
