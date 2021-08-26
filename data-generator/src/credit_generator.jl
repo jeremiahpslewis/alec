@@ -15,11 +15,11 @@ mode = "test"
 # mode = "prod"
 
 if mode == "test"
-    n_simulations = 3
-    n_applications_per_period = 250
+    n_simulations = 100
+    n_applications_per_period = 25
 elseif mode == "prod"
-    n_simulations = 30
-    n_applications_per_period = 1000
+    n_simulations = 1000
+    n_applications_per_period = 25
 end
 
 function generate_synthetic_data(n_applications_per_period)
@@ -39,8 +39,8 @@ function generate_synthetic_data(n_applications_per_period)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
 
-    income_based_risk_var = [0.1, 0.1, 0.1, 0.1, 0.1, 4, 4, 4, 4, 4]
-    asset_based_risk_var = [4, 4, 4, 4, 4, 0.1, 0.1, 0.1, 0.1, 0.1]
+    income_based_risk_var = [0.1, 0.1, 4, 4, 4]
+    asset_based_risk_var = [4, 4, 0.1, 0.1, 0.1]
 
     business_cycle_df = DataFrame(
         "income_based_risk_var" => income_based_risk_var,
