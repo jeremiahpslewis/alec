@@ -455,7 +455,7 @@ def run_simulation(simulation_id, scenario_id):
                 "scenario_id": scenario_id,
             }
         }
-        for i in range(6)
+        for i in range(10)
         for var in [
             "choose_business_portfolio",
             "choose_research_portfolio",
@@ -478,7 +478,7 @@ def run_simulation(simulation_id, scenario_id):
                     "scenario_id": scenario_id,
                 }
             }
-            for i in range(6)
+            for i in range(10)
             for var in [
                 "get_applications",
                 "observe_outcomes",
@@ -519,7 +519,7 @@ def run_simulation(simulation_id, scenario_id):
         model_pipeline = get_model_pipeline()
         active_learning_pipeline = get_active_learning_pipeline()
 
-        for t in range(6):
+        for t in range(10):
 
             trained_model = train_model(
                 application_df,

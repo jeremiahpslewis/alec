@@ -87,12 +87,12 @@ p2 = (
     )
     .mark_line(opacity=0.8)
     .encode(
-        x=alt.X("risk_score:Q", title=""),
+        x=alt.X("risk_score:Q", title="Log Odds Scale"),
         y=alt.Y("density:Q", title="Density"),
         color=alt.Color("application_date:N", title="Application Date"),
     )
     .facet(
-        column=alt.Column("variable:N", title="testtest"),
+        column=alt.Column("variable:N", title="Distribution of Risk Parameters"),
     ).resolve_scale(
     x='independent'
 )
@@ -100,7 +100,6 @@ p2 = (
 # p2 = p2.properties(height=500, width=1000)
 
 st.write(p2)
-
 
 p3 = (
     alt.Chart(df)
