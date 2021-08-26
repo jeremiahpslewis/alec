@@ -220,7 +220,7 @@ def train_model(
     training_data: data collected from previous loans granted, as pd.DataFrame
     model: machine learning model (pipeline) which can be applied to training data
     """
-
+    print("run model train!")
     training_df = prepare_training_data(application_df, portfolio_df, outcome_df)
 
     # NOTE: Currently all cases without observed default are dropped for ML model!
