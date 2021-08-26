@@ -40,7 +40,7 @@ function generate_synthetic_data(n_applications_per_period)
     end
 
     income_based_risk_var = [0.1, 0.1, 0.1, 0.1, 0.1, 4, 4, 4, 4, 4]
-    asset_based_risk_var = [4, 4, 4, 4, 4, 0.5, 0.1, 0.1, 0.1, 0.1]
+    asset_based_risk_var = [4, 4, 4, 4, 4, 0.1, 0.1, 0.1, 0.1, 0.1]
 
     business_cycle_df = DataFrame(
         "income_based_risk_var" => income_based_risk_var,
