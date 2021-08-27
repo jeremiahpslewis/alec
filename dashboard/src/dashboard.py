@@ -325,7 +325,12 @@ a = (
     )
 )
 
-b = a.properties(height=300, width=250)
+d = a.encode(y="mean(net_default_rate_effect)")
+
+
+b = d.mark_errorband(extent="ci", opacity=0.2) + d.mark_line() + a
+
+b = b.properties(height=300, width=500)
 
 b = b.facet(
     column=alt.Column("active_learning_spec:N", title="Active Learning Spec"),
