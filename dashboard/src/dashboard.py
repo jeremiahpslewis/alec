@@ -284,7 +284,9 @@ no_active_learning_results = (
     .counterfactual_default.mean()
 ).reset_index()
 
-no_active_learning_results.rename(columns={"counterfactual_default": "no_active_learning_default"}, inplace=True)
+no_active_learning_results.rename(
+    columns={"counterfactual_default": "no_active_learning_default"}, inplace=True
+)
 # Business Portfolio Uplift
 
 active_learning_results = (
@@ -301,19 +303,28 @@ active_learning_results = (
     .reset_index()
 )
 
-active_learning_results = pd.merge(active_learning_results, no_active_learning_results, on="simulation_id", how="left")
+active_learning_results = pd.merge(
+    active_learning_results, no_active_learning_results, on="simulation_id", how="left"
+)
 
 # Net Uplift with Research Portfolio
-active_learning_results["net_default_rate_effect"] = active_learning_results["counterfactual_default"] - active_learning_results["no_active_learning_default"]
+active_learning_results["net_default_rate_effect"] = (
+    active_learning_results["counterfactual_default"]
+    - active_learning_results["no_active_learning_default"]
+)
 
 # TODO: Rerun for total portfolio including research portfolio
 # TODO: Overplot mean and uncertainty
 a = (
-    alt.Chart(active_learning_results.loc[active_learning_results.portfolio == "business"])
+    alt.Chart(
+        active_learning_results.loc[active_learning_results.portfolio == "business"]
+    )
     .mark_point(opacity=0.1)
     .encode(
         x=alt.X(
-            "business_to_research_ratio:N", title="Business to Research Ratio", axis=alt.Axis(labelAngle=0)
+            "business_to_research_ratio:N",
+            title="Business to Research Ratio",
+            axis=alt.Axis(labelAngle=0),
         ),
         y=alt.Y(
             "net_default_rate_effect",

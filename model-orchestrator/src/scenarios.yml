@@ -4,6 +4,21 @@ scenarios:
     business_to_research_ratio: 0
     active_learning_spec: entropy_sampling
     ml_model_spec: 1
+  - id: w1
+    application_acceptance_rate: 0.2
+    business_to_research_ratio: 1
+    active_learning_spec: riskiest
+    ml_model_spec: 1
+  - id: w2
+    application_acceptance_rate: 0.2
+    business_to_research_ratio: 2
+    active_learning_spec: riskiest
+    ml_model_spec: 1
+  - id: w10
+    application_acceptance_rate: 0.2
+    business_to_research_ratio: 5
+    active_learning_spec: riskiest
+    ml_model_spec: 1    
   - id: r1
     application_acceptance_rate: 0.2
     business_to_research_ratio: 1

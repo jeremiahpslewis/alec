@@ -177,6 +177,8 @@ def get_active_learning_pipeline(context):
 
     if active_learning_spec == "random":
         return None
+    elif active_learning_spec == "riskiest":
+        return None
     elif active_learning_spec != "random":
         return getattr(modAL.uncertainty, active_learning_spec)
     return model_pipeline
@@ -339,6 +341,10 @@ def choose_research_portfolio(
         scenario_df.id == scenario_id, "business_to_research_ratio"
     ].iloc[0]
 
+    active_learning_spec = scenario_df.loc[
+        scenario_df.id == scenario_id, "active_learning_spec"
+    ].iloc[0]
+
     unfunded_applications = application_df[
         ~application_df.application_id.isin(portfolio_df.application_id.tolist())
         & (application_df.application_date == application_df.application_date.max())
@@ -358,9 +364,21 @@ def choose_research_portfolio(
     )
     n_research_loans = int(business_loan_count * (1 / business_to_research_ratio))
 
-    if active_learning_pipeline is None:
+    if active_learning_spec == "random":
         research_portfolio_df = unfunded_applications.sample(
             min(n_research_loans, unfunded_applications.shape[0])
+        )
+    elif active_learning_spec == "riskiest":
+        research_portfolio_df["est_default_prob"] = pd.DataFrame(
+            model_pipeline.predict_proba(research_portfolio_df.loc[:, X_vars])
+        ).loc[:, 1]        
+        research_portfolio_df = (
+            unfunded_applications.loc[
+                unfunded_applications["est_default_prob"].rank(method="first")
+                <= min(n_research_loans, unfunded_applications.shape[0])
+            ]
+            .copy()[["application_id", "simulation_id"]]
+            .reset_index(drop=True)
         )
     else:
 
