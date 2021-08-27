@@ -372,8 +372,6 @@ def choose_research_portfolio(
                 unfunded_applications["est_default_prob"].rank(method="last")
                 <= min(n_research_loans, unfunded_applications.shape[0])
             ]
-            .copy()[["application_id", "simulation_id"]]
-            .reset_index(drop=True)
         )
     else:
 
