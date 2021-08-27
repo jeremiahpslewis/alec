@@ -299,10 +299,17 @@ def choose_business_portfolio(
         current_application_df.est_default_prob.isna().sum() == 0
     ), "Some estimated default probabilities NaN"
 
+    # business_portfolio_df = (
+    #     current_application_df.loc[
+    #         current_application_df["est_default_prob"].rank(method="first")
+    #         <= int(current_application_df.shape[0] * application_acceptance_rate)
+    #     ]
+    #     .copy()[["application_id", "simulation_id"]]
+    #     .reset_index(drop=True)
+    # )
     business_portfolio_df = (
         current_application_df.loc[
-            current_application_df["est_default_prob"].rank(method="first")
-            <= int(current_application_df.shape[0] * application_acceptance_rate)
+            current_application_df["est_default_prob"] < 0.15
         ]
         .copy()[["application_id", "simulation_id"]]
         .reset_index(drop=True)
