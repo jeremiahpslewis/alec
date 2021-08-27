@@ -34,9 +34,9 @@ function generate_synthetic_data(n_applications_per_period)
         income_based_risk ~ MeasureTheory.Normal(0, 1)
         std_unif ~ MeasureTheory.Uniform()
         age = std_unif * age_scaler + age_scaler
-        age_pow4 = age^4
+        age_squared = age^2
         idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 1)
-        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + 3 * age_pow4
+        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + 2 * age_squared
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
@@ -113,7 +113,7 @@ generate_synthetic_data(n_applications_per_period, n_simulations)
 
 if false
     portfolio_df = generate_synthetic_data(n_applications_per_period)
-    fm = @formula(default ~ income_based_risk + age_pow4)
+    fm = @formula(default ~ income_based_risk + age_squared)
 
     portfolio_df_subset = @chain portfolio_df begin
         @subset(:application_date == 2020)

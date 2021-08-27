@@ -28,7 +28,7 @@ simulation_metadata = [
     "application_date",
 ]
 
-X_vars = ["income_based_risk", "age_pow4"]
+X_vars = ["income_based_risk", "age_squared"]
 y_var = ["default"]
 
 full_application_col_set = [*simulation_indices, *simulation_metadata, *X_vars]
@@ -122,9 +122,9 @@ def get_feature_pipeline():
     column_trans = ColumnTransformer(
         [
             (
-                "age_pow4",
+                "age_squared",
                 "passthrough",
-                ["age_pow4"],
+                ["age_squared"],
             ),
             (
                 "income_based_risk",
@@ -157,6 +157,7 @@ def get_model_pipeline(context) -> sklearn.pipeline.Pipeline:
         model_pipeline = get_model_pipeline_object()
     else:
         model_pipeline = get_model_pipeline_object()
+
     return model_pipeline
 
 
