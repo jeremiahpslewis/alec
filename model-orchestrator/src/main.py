@@ -207,7 +207,7 @@ def prepare_training_data(
 
     return training_df.reset_index(drop=True)
 
-
+@solid
 def train_model(
     context,
     application_df: pd.DataFrame,
