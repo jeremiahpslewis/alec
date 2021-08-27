@@ -33,6 +33,7 @@ function generate_synthetic_data(n_applications_per_period)
     loan_data_generator = @model mean_age begin
         income_based_risk ~ MeasureTheory.Normal(0, income_based_risk_var)
         age ~ MeasureTheory.Uniform(mean_age - 5, mean_age + 5)
+        age_squared = age^2
         idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 4)
         total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + age + 5 * age^2
         total_default_risk = logistic(total_default_risk_log_odds)
@@ -54,8 +55,7 @@ function generate_synthetic_data(n_applications_per_period)
         one_cycle_df = @chain one_cycle_df begin
             @transform(:application_date = x.application_date,
                        :default = :default * 1, # convert bool to int
-                       :income_based_risk_var = x.income_based_risk_var,
-                       :asset_based_risk_var = x.asset_based_risk_var,
+                       :mean_age = x.mean_age,
                        )
         end
         append!(portfolio_df, one_cycle_df)

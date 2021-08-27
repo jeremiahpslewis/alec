@@ -28,7 +28,7 @@ simulation_metadata = [
     "application_date",
 ]
 
-X_vars = ["income_based_risk", "age"]
+X_vars = ["income_based_risk", "age", "age_squared"]
 y_var = ["default"]
 
 full_application_col_set = [*simulation_indices, *simulation_metadata, *X_vars]
@@ -38,6 +38,7 @@ full_portfolio_col_set = [
     "credit_granted",
     "funding_probability",
 ]
+
 full_outcome_col_set = [*simulation_indices, "default"]
 
 
@@ -121,9 +122,14 @@ def get_feature_pipeline():
     column_trans = ColumnTransformer(
         [
             (
-                "asset_based_risk",
+                "age",
                 "passthrough",
-                ["asset_based_risk"],
+                ["age"],
+            ),
+            (
+                "age_squared",
+                "passthrough",
+                ["age_squared"],
             ),
             (
                 "income_based_risk",
