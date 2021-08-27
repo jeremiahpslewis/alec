@@ -369,7 +369,7 @@ def choose_research_portfolio(
         ).loc[:, 1]        
         research_portfolio_df = (
             unfunded_applications.loc[
-                unfunded_applications["est_default_prob"].rank(method="first")
+                unfunded_applications["est_default_prob"].rank(method="last")
                 <= min(n_research_loans, unfunded_applications.shape[0])
             ]
             .copy()[["application_id", "simulation_id"]]
