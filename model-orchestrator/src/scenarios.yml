@@ -1,80 +1,65 @@
 scenarios:
-  - id: r1
+  - id: no-active-learning
     application_acceptance_rate: 0.1
     business_to_research_ratio: 0
-    active_learning_spec: random
+    active_learning_spec: entropy_sampling
     ml_model_spec: 1
-  - id: r2
+  - id: r1
     application_acceptance_rate: 0.1
     business_to_research_ratio: 1
     active_learning_spec: random
     ml_model_spec: 1
-  - id: r3
+  - id: r2
     application_acceptance_rate: 0.1
     business_to_research_ratio: 2
     active_learning_spec: random
     ml_model_spec: 1
-  - id: r4
+  - id: r10
     application_acceptance_rate: 0.1
     business_to_research_ratio: 10
     active_learning_spec: random
     ml_model_spec: 1
   - id: u1
     application_acceptance_rate: 0.1
-    business_to_research_ratio: 0
+    business_to_research_ratio: 1
     active_learning_spec: uncertainty_sampling
     ml_model_spec: 1
   - id: u2
     application_acceptance_rate: 0.1
-    business_to_research_ratio: 1
-    active_learning_spec: uncertainty_sampling
-    ml_model_spec: 1
-  - id: u3
-    application_acceptance_rate: 0.1
     business_to_research_ratio: 2
     active_learning_spec: uncertainty_sampling
     ml_model_spec: 1
-  - id: u4
+  - id: u10
     application_acceptance_rate: 0.1
     business_to_research_ratio: 10
     active_learning_spec: uncertainty_sampling
     ml_model_spec: 1
   - id: m1
     application_acceptance_rate: 0.1
-    business_to_research_ratio: 0
+    business_to_research_ratio: 1
     active_learning_spec: margin_sampling
     ml_model_spec: 1
   - id: m2
     application_acceptance_rate: 0.1
-    business_to_research_ratio: 1
-    active_learning_spec: margin_sampling
-    ml_model_spec: 1
-  - id: m3
-    application_acceptance_rate: 0.1
     business_to_research_ratio: 2
     active_learning_spec: margin_sampling
     ml_model_spec: 1
-  - id: m4
+  - id: m10
     application_acceptance_rate: 0.1
     business_to_research_ratio: 10
     active_learning_spec: margin_sampling
     ml_model_spec: 1
   - id: e1
     application_acceptance_rate: 0.1
-    business_to_research_ratio: 0
+    business_to_research_ratio: 1
     active_learning_spec: entropy_sampling
     ml_model_spec: 1
   - id: e2
     application_acceptance_rate: 0.1
-    business_to_research_ratio: 1
-    active_learning_spec: entropy_sampling
-    ml_model_spec: 1
-  - id: e3
-    application_acceptance_rate: 0.1
     business_to_research_ratio: 2
     active_learning_spec: entropy_sampling
     ml_model_spec: 1
-  - id: e4
+  - id: e10
     application_acceptance_rate: 0.1
     business_to_research_ratio: 10
     active_learning_spec: entropy_sampling
