@@ -113,16 +113,16 @@ generate_synthetic_data(n_applications_per_period, n_simulations)
 
 if false
     portfolio_df = generate_synthetic_data(n_applications_per_period)
-    fm = @formula(default ~ income_based_risk + age + age_squared)
+    fm = @formula(default ~ income_based_risk + age_squared)
 
     portfolio_df_subset = @chain portfolio_df begin
-        @subset(:application_date >= 2020)
+        @subset(:application_date < 2022)
     end;
 
     logit = glm(fm, portfolio_df_subset, GLM.Binomial(), LogitLink())
 
     portfolio_df_subset = @chain portfolio_df begin
-        @subset(:application_date < 2025)
+        @subset(:application_date == 2024)
     end;
 
     logit = glm(fm, portfolio_df_subset, GLM.Binomial(), LogitLink())
