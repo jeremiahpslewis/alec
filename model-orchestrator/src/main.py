@@ -24,12 +24,11 @@ simulation_metadata = [
     "scenario_id",
     "idiosyncratic_individual_risk",
     "total_default_risk",
-    "income_based_risk_var",
-    "asset_based_risk_var",
+    "age_var",
     "application_date",
 ]
 
-X_vars = ["income_based_risk", "asset_based_risk"]
+X_vars = ["age"]
 y_var = ["default"]
 
 full_application_col_set = [*simulation_indices, *simulation_metadata, *X_vars]
@@ -123,14 +122,9 @@ def get_feature_pipeline():
     column_trans = ColumnTransformer(
         [
             (
-                "asset_based_risk",
+                "age_sq",
                 "passthrough",
-                ["asset_based_risk"],
-            ),
-            (
-                "income_based_risk",
-                "passthrough",
-                ["income_based_risk"],
+                ["age_sq"],
             ),
         ],
         remainder="drop",
