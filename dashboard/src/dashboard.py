@@ -270,3 +270,8 @@ c = c.facet(
     column="business_to_research_ratio:N",
 )
 st.write(c)
+
+
+df_summary_full.loc[df_summary_full.portfolio.isin(["business", "research"])].groupby(
+    ["active_learning_spec", "business_to_research_ratio"]
+).counterfactual_default.mean()
