@@ -36,7 +36,7 @@ function generate_synthetic_data(n_applications_per_period)
         age = std_unif * age_scaler
         age_squared = age^2
         idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 1)
-        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + 5 * age_squared
+        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + 3 * age_squared
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
@@ -116,7 +116,7 @@ if false
     fm = @formula(default ~ income_based_risk + age_squared)
 
     portfolio_df_subset = @chain portfolio_df begin
-        @subset(:application_date < 2022)
+        @subset(:application_date == 2020)
     end;
 
     logit = glm(fm, portfolio_df_subset, GLM.Binomial(), LogitLink())
