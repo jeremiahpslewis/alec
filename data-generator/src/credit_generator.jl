@@ -34,13 +34,13 @@ function generate_synthetic_data(n_applications_per_period)
         income_based_risk ~ MeasureTheory.Normal(0, income_based_risk_var)
         asset_based_risk ~ MeasureTheory.Normal(0, asset_based_risk_var)
         idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 4)
-        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + asset_based_risk
+        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + asset_based_risk + idiosyncratic_individual_risk^2
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
 
-    income_based_risk_var = [0.1, 0.1, 4, 4, 4]
-    asset_based_risk_var = [4, 4, 0.1, 0.1, 0.1]
+    income_based_risk_var = [0.01, 0.01, 4, 4, 4]
+    asset_based_risk_var = [4, 4, 0.01, 0.01, 0.01]
 
     business_cycle_df = DataFrame(
         "income_based_risk_var" => income_based_risk_var,

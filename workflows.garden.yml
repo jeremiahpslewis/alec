@@ -8,5 +8,6 @@ name: full-pipeline
 steps:
   - command: [run, task, generate-synthetic-data, --force]
   - command: [run, task, run-alec, --force, --force-build]
+  - command: [run, task, generate-summary-data, --force]
 
         
