@@ -15,7 +15,7 @@ mode = "test"
 # mode = "prod"
 
 if mode == "test"
-    n_simulations = 3
+    n_simulations = 10
     n_applications_per_period = 100
 elseif mode == "prod"
     n_simulations = 1000
