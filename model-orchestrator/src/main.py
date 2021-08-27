@@ -24,7 +24,7 @@ simulation_metadata = [
     "scenario_id",
     "idiosyncratic_individual_risk",
     "total_default_risk",
-    "mean_age",
+    "age_scaler",
     "application_date",
 ]
 
