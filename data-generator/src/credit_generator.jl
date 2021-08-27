@@ -30,10 +30,10 @@ function generate_synthetic_data(n_applications_per_period)
 
     simulation_id = string(UUIDs.uuid4())
 
-    loan_data_generator = @model mean_age begin
+    loan_data_generator = @model age_scaler begin
         income_based_risk ~ MeasureTheory.Normal(0, 1)
         std_unif ~ MeasureTheory.Uniform()
-        age = std_unif * 10 + mean_age
+        age = std_unif * age_scaler
         age_squared = age^2
         idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 1)
         total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + age + 5 * age^2
@@ -41,10 +41,10 @@ function generate_synthetic_data(n_applications_per_period)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
 
-    mean_age = [25, 40, 55, 70, 85]
+    age_scaler = [0.1, 0.5, 1, 1.5, 2]
 
     business_cycle_df = DataFrame(
-        "mean_age" => mean_age,
+        "age_scaler" => age_scaler,
     )
     n_periods = nrow(business_cycle_df)
     business_cycle_df[!, "application_date"] = 2020:(2020 + (n_periods - 1))
@@ -52,11 +52,11 @@ function generate_synthetic_data(n_applications_per_period)
 
     portfolio_df = DataFrame()
     for x in eachrow(business_cycle_df)
-        one_cycle_df = DataFrame(rand(loan_data_generator(x.mean_age), n_applications_per_period))
+        one_cycle_df = DataFrame(rand(loan_data_generator(x.age_scaler), n_applications_per_period))
         one_cycle_df = @chain one_cycle_df begin
             @transform(:application_date = x.application_date,
                        :default = :default * 1, # convert bool to int
-                       :mean_age = x.mean_age,
+                       :age_scaler = x.age_scaler,
                        )
         end
         append!(portfolio_df, one_cycle_df)
