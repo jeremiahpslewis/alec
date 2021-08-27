@@ -67,10 +67,21 @@ def get_historical_data(
     df["credit_granted"] = True
     df["funding_probability"] = 1
 
+    application_acceptance_rate = scenario_df.loc[
+        scenario_df.id == scenario_id, "application_acceptance_rate"
+    ].iloc[0]
+
     df_hist = (
         df.loc[df.application_date == df.application_date.min()]
         .copy()
         .reset_index(drop=True)
+    )
+    
+    df_hist = (
+        df_hist.loc[
+            df_hist["total_default_risk"].rank(method="first")
+            <= int(df_hist.shape[0] * application_acceptance_rate)
+        ].copy()
     )
 
     hist_application_df = (
