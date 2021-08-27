@@ -122,11 +122,6 @@ def get_feature_pipeline():
     column_trans = ColumnTransformer(
         [
             (
-                "age",
-                "passthrough",
-                ["age"],
-            ),
-            (
                 "age_squared",
                 "passthrough",
                 ["age_squared"],
