@@ -15,12 +15,13 @@ mode = "test"
 # mode = "prod"
 
 if mode == "test"
-    n_simulations = 5
-    n_applications_per_period = 25
+    n_simulations = 3
+    n_applications_per_period = 250
 elseif mode == "prod"
-    n_simulations = 1000
-    n_applications_per_period = 25
+    n_simulations = 30
+    n_applications_per_period = 1000
 end
+
 
 function generate_synthetic_data(n_applications_per_period)
     # Delete this line
@@ -30,33 +31,35 @@ function generate_synthetic_data(n_applications_per_period)
 
     simulation_id = string(UUIDs.uuid4())
 
-    loan_data_generator = @model age_scaler begin
-        income_based_risk ~ MeasureTheory.Normal(0, 1)
-        std_unif ~ MeasureTheory.Uniform()
-        age = std_unif * age_scaler + age_scaler
-        age_squared = age^2
-        idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 1)
-        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + 2 * age_squared
+    loan_data_generator = @model income_based_risk_var, asset_based_risk_var begin
+        income_based_risk ~ MeasureTheory.Normal(0, income_based_risk_var)
+        asset_based_risk ~ MeasureTheory.Normal(0, asset_based_risk_var)
+        idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 0.1)
+        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + asset_based_risk
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
 
-    age_scaler = [0.01, 0.02, 0.05, 0.5, 1]
+    income_based_risk_var = [0.1, 0.1, 0.1, 0.1, 0.1, 4, 4, 4, 4, 4]
+    asset_based_risk_var = [4, 4, 4, 4, 4, 0.1, 0.1, 0.1, 0.1, 0.1]
 
     business_cycle_df = DataFrame(
-        "age_scaler" => age_scaler,
+        "income_based_risk_var" => income_based_risk_var,
+        "asset_based_risk_var" => asset_based_risk_var,
     )
+
     n_periods = nrow(business_cycle_df)
     business_cycle_df[!, "application_date"] = 2020:(2020 + (n_periods - 1))
 
 
     portfolio_df = DataFrame()
     for x in eachrow(business_cycle_df)
-        one_cycle_df = DataFrame(rand(loan_data_generator(x.age_scaler), n_applications_per_period))
+        one_cycle_df = DataFrame(rand(loan_data_generator(x.income_based_risk_var, x.asset_based_risk_var), n_applications_per_period))
         one_cycle_df = @chain one_cycle_df begin
             @transform(:application_date = x.application_date,
                        :default = :default * 1, # convert bool to int
-                       :age_scaler = x.age_scaler,
+                       :income_based_risk_var = x.income_based_risk_var,
+                       :asset_based_risk_var = x.asset_based_risk_var,
                        )
         end
         append!(portfolio_df, one_cycle_df)
@@ -113,7 +116,7 @@ generate_synthetic_data(n_applications_per_period, n_simulations)
 
 if false
     portfolio_df = generate_synthetic_data(n_applications_per_period)
-    fm = @formula(default ~ income_based_risk + age_squared)
+    fm = @formula(default ~ income_based_risk + asset_based_risk)
 
     portfolio_df_subset = @chain portfolio_df begin
         @subset(:application_date == 2020)

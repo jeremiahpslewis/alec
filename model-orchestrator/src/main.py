@@ -24,11 +24,12 @@ simulation_metadata = [
     "scenario_id",
     "idiosyncratic_individual_risk",
     "total_default_risk",
-    "age_scaler",
+    "income_based_risk_var",
+    "asset_based_risk_var",
     "application_date",
 ]
 
-X_vars = ["income_based_risk", "age_squared"]
+X_vars = ["income_based_risk", "asset_based_risk"]
 y_var = ["default"]
 
 full_application_col_set = [*simulation_indices, *simulation_metadata, *X_vars]
@@ -122,11 +123,10 @@ def get_feature_pipeline():
     column_trans = ColumnTransformer(
         [
             (
-                "age_squared",
+                "asset_based_risk",
                 "passthrough",
-                ["age_squared"],
-            ),
-            (
+                ["asset_based_risk"],
+            ),            (
                 "income_based_risk",
                 "passthrough",
                 ["income_based_risk"],
@@ -207,7 +207,9 @@ def prepare_training_data(
     return training_df.reset_index(drop=True)
 
 
-@solid
+@solid(
+    config_schema={"application_date": int, "simulation_id": str, "scenario_id": str}
+)
 def train_model(
     context,
     application_df: pd.DataFrame,
@@ -225,10 +227,7 @@ def train_model(
 
     training_df = training_df.loc[training_df.default.notnull()].copy()
 
-    # try:
     model_pipeline.fit(training_df.loc[:, X_vars], training_df["default"].astype("int"))
-    # except Exception:
-    #     training_df.to_parquet(f"debug_{training_df.application_date.max()}.parquet")
 
     return model_pipeline
 
