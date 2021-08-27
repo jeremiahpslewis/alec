@@ -208,9 +208,6 @@ def prepare_training_data(
     return training_df.reset_index(drop=True)
 
 
-@solid(
-    config_schema={"application_date": int, "simulation_id": str, "scenario_id": str}
-)
 def train_model(
     context,
     application_df: pd.DataFrame,
