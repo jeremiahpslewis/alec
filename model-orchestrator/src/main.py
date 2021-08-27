@@ -28,7 +28,7 @@ simulation_metadata = [
     "application_date",
 ]
 
-X_vars = ["income_based_risk", "age", "age_squared"]
+X_vars = ["income_based_risk", "age_squared"]
 y_var = ["default"]
 
 full_application_col_set = [*simulation_indices, *simulation_metadata, *X_vars]
