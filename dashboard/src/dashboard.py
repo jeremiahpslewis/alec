@@ -220,6 +220,9 @@ df_summary_full = pd.read_parquet("s3://alec/dashboard/summary_data.parquet")
 
 df_plot = df_summary_full[df_summary_full.application_date > 2020].copy()
 
+pp_scale = alt.Scale(domain=(-1, 1))
+
+
 a = (
     alt.Chart(df_plot)
     .mark_point(opacity=0.1)
@@ -272,6 +275,60 @@ c = c.facet(
 st.write(c)
 
 
-df_summary_full.loc[df_summary_full.portfolio.isin(["business", "research"])].groupby(
-    ["active_learning_spec", "business_to_research_ratio", "portfolio"]
-).counterfactual_default.mean()
+no_active_learning_results = (
+    df_summary_full.loc[
+        df_summary_full.portfolio.isin(["business", "research"])
+        & (df_summary_full.business_to_research_ratio == 0)
+    ]
+    .groupby("simulation_id")
+    .counterfactual_default.mean()
+).reset_index()
+
+no_active_learning_results.rename(columns={"counterfactual_default": "no_active_learning_default"}, inplace=True)
+# Business Portfolio Uplift
+
+active_learning_results = (
+    df_summary_full.loc[df_summary_full.portfolio.isin(["business", "research"])]
+    .groupby(
+        [
+            "simulation_id",
+            "active_learning_spec",
+            "business_to_research_ratio",
+            "portfolio",
+        ]
+    )
+    .counterfactual_default.mean()
+    .reset_index()
+)
+
+active_learning_results = pd.merge(active_learning_results, no_active_learning_results, on="simulation_id", how="left")
+
+# Net Uplift with Research Portfolio
+active_learning_results["net_default_rate_effect"] = active_learning_results["counterfactual_default"] - active_learning_results["no_active_learning_default"]
+
+# TODO: Rerun for total portfolio including research portfolio
+# TODO: Overplot mean and uncertainty
+a = (
+    alt.Chart(active_learning_results.loc[active_learning_results.portfolio == "business"])
+    .mark_point(opacity=0.1)
+    .encode(
+        x=alt.X(
+            "business_to_research_ratio:N", title="Business to Research Ratio", axis=alt.Axis(labelAngle=0)
+        ),
+        y=alt.Y(
+            "net_default_rate_effect",
+            title="Net Default Rate Effect (Business Portfolio), in p.p.",
+            axis=alt.Axis(format="%"),
+            scale=pp_scale,
+        ),
+        color="portfolio",
+    )
+)
+
+b = a.properties(height=300, width=250)
+
+b = b.facet(
+    column=alt.Column("active_learning_spec:N", title="Active Learning Spec"),
+)
+
+st.write(b)

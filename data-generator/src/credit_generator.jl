@@ -15,8 +15,8 @@ mode = "test"
 # mode = "prod"
 
 if mode == "test"
-    n_simulations = 35
-    n_applications_per_period = 300
+    n_simulations = 100
+    n_applications_per_period = 25
 elseif mode == "prod"
     n_simulations = 1000
     n_applications_per_period = 25
@@ -33,7 +33,7 @@ function generate_synthetic_data(n_applications_per_period)
     loan_data_generator = @model income_based_risk_var, asset_based_risk_var begin
         income_based_risk ~ MeasureTheory.Normal(0, income_based_risk_var)
         asset_based_risk ~ MeasureTheory.Normal(0, asset_based_risk_var)
-        idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 1)
+        idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 0.1)
         total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + asset_based_risk
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
