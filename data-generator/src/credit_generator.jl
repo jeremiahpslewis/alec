@@ -15,7 +15,7 @@ mode = "test"
 # mode = "prod"
 
 if mode == "test"
-    n_simulations = 100
+    n_simulations = 3
     n_applications_per_period = 25
 elseif mode == "prod"
     n_simulations = 1000
@@ -30,21 +30,19 @@ function generate_synthetic_data(n_applications_per_period)
 
     simulation_id = string(UUIDs.uuid4())
 
-    loan_data_generator = @model income_based_risk_var, asset_based_risk_var begin
+    loan_data_generator = @model mean_age begin
         income_based_risk ~ MeasureTheory.Normal(0, income_based_risk_var)
-        asset_based_risk ~ MeasureTheory.Normal(0, asset_based_risk_var)
+        age ~ MeasureTheory.Uniform(mean_age - 2, mean_age + 2)
         idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 4)
-        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + asset_based_risk + idiosyncratic_individual_risk^2
+        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + age + age^2
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
 
-    income_based_risk_var = [0.01, 0.01, 4, 4, 4]
-    asset_based_risk_var = [4, 4, 0.01, 0.01, 0.01]
+    mean_age = [25, 40, 55, 70, 85]
 
     business_cycle_df = DataFrame(
-        "income_based_risk_var" => income_based_risk_var,
-        "asset_based_risk_var" => asset_based_risk_var,
+        "mean_age" => mean_age,
     )
     n_periods = nrow(business_cycle_df)
     business_cycle_df[!, "application_date"] = 2020:(2020 + (n_periods - 1))
@@ -52,7 +50,7 @@ function generate_synthetic_data(n_applications_per_period)
 
     portfolio_df = DataFrame()
     for x in eachrow(business_cycle_df)
-        one_cycle_df = DataFrame(rand(loan_data_generator(x.income_based_risk_var, x.asset_based_risk_var), n_applications_per_period))
+        one_cycle_df = DataFrame(rand(loan_data_generator(x.mean_age), n_applications_per_period))
         one_cycle_df = @chain one_cycle_df begin
             @transform(:application_date = x.application_date,
                        :default = :default * 1, # convert bool to int
