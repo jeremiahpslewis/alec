@@ -2,19 +2,26 @@ kind: Module
 type: container
 name: dashboard
 disabled: false
-
 services:
   - name: dash
     ports:
       - name: http
         containerPort: 8501
-    # dependencies:
-    #   - generate-synthetic-data
     devMode:
       sync:
         - target: /app
           source: src
           mode: two-way
+    env:
+      AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
+tasks:
+  - name: generate-summary-data
+    command: ["python", "generate_summary_data.py"]
+    timeout:
+      100000
+    dependencies:
+      - generate-synthetic-data
     env:
       AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
