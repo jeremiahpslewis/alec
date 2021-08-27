@@ -46,9 +46,13 @@ for x in eachrow(business_cycle_df)
 end
 
 
-portfolio_df = generate_synthetic_data(n_applications_per_period)
 fm = @formula(default ~ income_based_risk + asset_based_risk)
 
 portfolio_df_subset = @chain portfolio_df begin
     @subset(:application_date == 2020)
 end;
+
+logit = glm(fm, portfolio_df_subset, GLM.Binomial(), LogitLink())
+
+# Mean squared error
+mean(abs.(portfolio_df_subset[!, :total_default_risk] - GLM.predict(logit, portfolio_df_subset)).^2)
