@@ -56,7 +56,24 @@ p1 = (
     )
 )
 
-p1 = p1.mark_errorband(extent="ci", opacity=0.2) + p1
+p11 = (
+    alt.Chart(df_summary)
+    .mark_errorband(extent="ci", opacity=0.2)
+    .encode(
+        y=alt.Y(
+            "default",
+            title="Default Rate",
+            scale=pct_scale,
+        ),
+        x=alt.X(
+            "application_date:N",
+            title="Application Date",
+            axis=alt.Axis(labelAngle=0),
+        ),
+    )
+)
+
+p1 = p11 + p1
 p1 = p1.properties(height=500, width=1000, title="Simulation Defaults over Time")
 
 st.write(p1)
@@ -157,14 +174,10 @@ p5 = (
         x=alt.X(
             "income_based_risk",
             title="Income Based Risk (Log Odds)",
-            # axis=alt.Axis(format="%"),
-            # scale=pct_scale,
         ),
-        # color="portfolio",
-        # color="application_date"
     )
     .facet(
-        column="application_date:N",
+        column=alt.Column("application_date:N", title="Application Date"),
     )
 )
 
@@ -180,14 +193,10 @@ p6 = (
         x=alt.X(
             "asset_based_risk",
             title="Asset Based Risk (Log Odds)",
-            # axis=alt.Axis(format="%"),
-            # scale=pct_scale,
         ),
-        # color="portfolio",
-        # color="application_date"
     )
     .facet(
-        column="application_date:N",
+        column=alt.Column("application_date:N", title="Application Date"),
     )
 )
 
