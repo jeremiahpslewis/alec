@@ -32,9 +32,9 @@ function generate_synthetic_data(n_applications_per_period)
 
     loan_data_generator = @model mean_age begin
         income_based_risk ~ MeasureTheory.Normal(0, income_based_risk_var)
-        age ~ MeasureTheory.Uniform(mean_age - 2, mean_age + 2)
+        age ~ MeasureTheory.Uniform(mean_age - 5, mean_age + 5)
         idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 4)
-        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + age + age^2
+        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + age + 5 * age^2
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
