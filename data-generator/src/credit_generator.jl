@@ -15,7 +15,7 @@ mode = "test"
 # mode = "prod"
 
 if mode == "test"
-    n_simulations = 10
+    n_simulations = 5
     n_applications_per_period = 100
 elseif mode == "prod"
     n_simulations = 1000
@@ -31,17 +31,17 @@ function generate_synthetic_data(n_applications_per_period)
     simulation_id = string(UUIDs.uuid4())
 
     loan_data_generator = @model age_scaler begin
-        income_based_risk ~ MeasureTheory.Normal(0, 1)
+        income_based_risk ~ MeasureTheory.Normal(0, 2)
         std_unif ~ MeasureTheory.Uniform()
         age = std_unif * age_scaler
         age_squared = age^2
-        idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 1)
-        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + age + 5 * age^2
+        idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 2)
+        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + age + 5 * age_squared
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
 
-    age_scaler = [0.1, 0.5, 1, 1.5, 2]
+    age_scaler = [0.01, 0.02, 0.05, 0.5, 1]
 
     business_cycle_df = DataFrame(
         "age_scaler" => age_scaler,
