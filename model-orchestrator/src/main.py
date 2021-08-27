@@ -26,7 +26,7 @@ simulation_metadata = [
     "total_default_risk",
     "income_based_risk_var",
     "asset_based_risk_var",
-    "application_date",    
+    "application_date",
 ]
 
 X_vars = ["income_based_risk", "asset_based_risk"]

@@ -73,7 +73,15 @@ p11 = (
     )
 )
 
-p1 = p11 + p1
+p12 = p11.mark_line().encode(
+    y=alt.Y(
+        "mean(default)",
+        title="Default Rate",
+        scale=pct_scale,
+    )
+)
+
+p1 = p12 + p11 + p1
 p1 = p1.properties(height=500, width=1000, title="Simulation Defaults over Time")
 
 st.write(p1)
@@ -169,7 +177,9 @@ p5 = (
     .mark_point()
     .encode(
         y=alt.Y(
-            "total_default_risk",  title="Default Probability", axis=alt.Axis(format="%"),
+            "total_default_risk",
+            title="Default Probability",
+            axis=alt.Axis(format="%"),
         ),
         x=alt.X(
             "income_based_risk",
@@ -188,7 +198,9 @@ p6 = (
     .mark_point()
     .encode(
         y=alt.Y(
-            "total_default_risk",  title="Default Probability", axis=alt.Axis(format="%"),
+            "total_default_risk",
+            title="Default Probability",
+            axis=alt.Axis(format="%"),
         ),
         x=alt.X(
             "asset_based_risk",

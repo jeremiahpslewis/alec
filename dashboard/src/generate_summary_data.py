@@ -11,14 +11,11 @@ scenario_ids = []
 for i in ["applications", "outcomes", "portfolios", "scenarios"]:
     file_paths_tmp = [f.key for f in s3_alec.objects.filter(Prefix=f"{i}/")]
     simulation_ids_tmp = [
-        simulation_id.split("/")[2].split(".")[0]
-        for simulation_id in file_paths_tmp
+        simulation_id.split("/")[2].split(".")[0] for simulation_id in file_paths_tmp
     ]
     simulation_ids.extend(simulation_ids_tmp)
 
-    scenario_ids_tmp = [
-        simulation_id.split("/")[1] for simulation_id in file_paths_tmp
-    ]
+    scenario_ids_tmp = [simulation_id.split("/")[1] for simulation_id in file_paths_tmp]
     scenario_ids.extend(scenario_ids_tmp)
 
 simulation_ids = pd.DataFrame({"simulation_id": simulation_ids})
