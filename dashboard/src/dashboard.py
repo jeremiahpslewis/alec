@@ -273,5 +273,5 @@ st.write(c)
 
 
 df_summary_full.loc[df_summary_full.portfolio.isin(["business", "research"])].groupby(
-    ["active_learning_spec", "business_to_research_ratio"]
+    ["active_learning_spec", "business_to_research_ratio", "portfolio"]
 ).counterfactual_default.mean()
