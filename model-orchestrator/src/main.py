@@ -126,7 +126,8 @@ def get_feature_pipeline():
                 "asset_based_risk",
                 "passthrough",
                 ["asset_based_risk"],
-            ),            (
+            ),
+            (
                 "income_based_risk",
                 "passthrough",
                 ["income_based_risk"],
