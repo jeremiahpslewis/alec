@@ -1,6 +1,6 @@
 scenarios:
   - id: no-active-learning
-    application_acceptance_rate: 0.1
+    application_acceptance_rate: 0.2
     business_to_research_ratio: 0
     active_learning_spec: entropy_sampling
     ml_model_spec: 1
