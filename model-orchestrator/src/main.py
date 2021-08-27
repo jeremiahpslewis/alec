@@ -67,21 +67,10 @@ def get_historical_data(
     df["credit_granted"] = True
     df["funding_probability"] = 1
 
-    application_acceptance_rate = scenario_df.loc[
-        scenario_df.id == scenario_id, "application_acceptance_rate"
-    ].iloc[0]
-
     df_hist = (
         df.loc[df.application_date == df.application_date.min()]
         .copy()
         .reset_index(drop=True)
-    )
-    
-    df_hist = (
-        df_hist.loc[
-            df_hist["total_default_risk"].rank(method="first")
-            <= int(df_hist.shape[0] * application_acceptance_rate)
-        ].copy()
     )
 
     hist_application_df = (
@@ -476,7 +465,7 @@ def run_simulation(simulation_id, scenario_id):
                 "scenario_id": scenario_id,
             }
         }
-        for i in range(8)
+        for i in range(5)
         for var in [
             "choose_business_portfolio",
             "choose_research_portfolio",
@@ -499,7 +488,7 @@ def run_simulation(simulation_id, scenario_id):
                     "scenario_id": scenario_id,
                 }
             }
-            for i in range(8)
+            for i in range(5)
             for var in [
                 "get_applications",
                 "observe_outcomes",
@@ -540,7 +529,7 @@ def run_simulation(simulation_id, scenario_id):
         model_pipeline = get_model_pipeline()
         active_learning_pipeline = get_active_learning_pipeline()
 
-        for t in range(8):
+        for t in range(5):
 
             trained_model = train_model(
                 application_df,
