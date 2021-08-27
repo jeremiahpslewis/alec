@@ -36,7 +36,7 @@ function generate_synthetic_data(n_applications_per_period)
         age = std_unif * age_scaler
         age_squared = age^2
         idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 1)
-        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk - 3 * age_squared
+        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk - 5 * age_squared
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
