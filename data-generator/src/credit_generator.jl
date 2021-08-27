@@ -31,12 +31,12 @@ function generate_synthetic_data(n_applications_per_period)
     simulation_id = string(UUIDs.uuid4())
 
     loan_data_generator = @model age_scaler begin
-        income_based_risk ~ MeasureTheory.Normal(0, 2)
+        income_based_risk ~ MeasureTheory.Normal(0, 1)
         std_unif ~ MeasureTheory.Uniform()
         age = std_unif * age_scaler
         age_squared = age^2
-        idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 2)
-        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + age + 5 * age_squared
+        idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 1)
+        total_default_risk_log_odds = idiosyncratic_individual_risk + income_based_risk + 5 * age_squared
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
     end
@@ -112,10 +112,11 @@ generate_synthetic_data(n_applications_per_period, n_simulations)
 # for the dominant variable and quite low for the non-dominant one...
 
 if false
-    fm = @formula(default ~ income_based_risk + asset_based_risk)
+    portfolio_df = generate_synthetic_data(n_applications_per_period)
+    fm = @formula(default ~ income_based_risk + age + age_squared)
 
     portfolio_df_subset = @chain portfolio_df begin
-        @subset(:application_date >= 2025)
+        @subset(:application_date >= 2020)
     end;
 
     logit = glm(fm, portfolio_df_subset, GLM.Binomial(), LogitLink())
