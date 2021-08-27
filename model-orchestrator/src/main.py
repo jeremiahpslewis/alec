@@ -366,13 +366,13 @@ def choose_research_portfolio(
     elif active_learning_spec == "riskiest":
         unfunded_applications["est_default_prob"] = pd.DataFrame(
             model_pipeline.predict_proba(unfunded_applications.loc[:, X_vars])
-        ).loc[:, 1]        
-        research_portfolio_df = (
-            unfunded_applications.loc[
-                unfunded_applications["est_default_prob"].rank(method="first", ascending=False)
-                <= min(n_research_loans, unfunded_applications.shape[0])
-            ]
-        )
+        ).loc[:, 1]
+        research_portfolio_df = unfunded_applications.loc[
+            unfunded_applications["est_default_prob"].rank(
+                method="first", ascending=False
+            )
+            <= min(n_research_loans, unfunded_applications.shape[0])
+        ]
     else:
 
         active_learning_df = prepare_training_data(
