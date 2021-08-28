@@ -329,8 +329,8 @@ def choose_research_portfolio(
     if unfunded_applications.shape[0] == 0:
         return portfolio_df
 
-    # NOTE: If research_acceptance_rate == 0, no research loans are made
-    if research_acceptance_rate == 0:
+    # NOTE: If research_acceptance_rate is no-active-learning, no research loans are made
+    if scenario_id == "no-active-learning":
         return portfolio_df
 
     n_research_loans = int(current_applications.shape[0] * research_acceptance_rate)
