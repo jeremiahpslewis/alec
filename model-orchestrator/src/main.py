@@ -359,12 +359,12 @@ def choose_research_portfolio(
             research_portfolio_df = active_learning_df.copy()
         else:
             research_portfolio_df = active_learning_df.copy()
-            # research_loan_index = active_learning_pipeline(
-            #     classifier=model_pipeline,
-            #     X=active_learning_df.loc[:, X_vars],
-            #     n_instances=n_research_loans,
-            # )
-            # research_portfolio_df = active_learning_df.loc[research_loan_index].copy()
+            research_loan_index = active_learning_pipeline(
+                classifier=model_pipeline,
+                X=active_learning_df.loc[:, X_vars],
+                n_instances=n_research_loans,
+            )
+            research_portfolio_df = active_learning_df.loc[research_loan_index].copy()
 
     research_portfolio_df = (
         research_portfolio_df[["application_id", "simulation_id"]]
