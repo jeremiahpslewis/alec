@@ -68,8 +68,7 @@ for scenario_id in scenario_ids:
         groupby_indices = [
             "simulation_id",
             "application_date",
-            "application_acceptance_rate",
-            "business_to_research_ratio",
+            "research_acceptance_rate",
             "active_learning_spec",
         ]
 

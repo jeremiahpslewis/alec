@@ -143,15 +143,9 @@ def get_model_pipeline(context) -> sklearn.pipeline.Pipeline:
     scenario_id = context.solid_config["scenario_id"]
     scenario_df = get_scenario_df()
 
-    ml_model_spec = scenario_df.loc[
-        scenario_df.id == scenario_id, "ml_model_spec"
-    ].iloc[0]
     column_trans = get_feature_pipeline()
 
-    if ml_model_spec == 1:
-        model_pipeline = get_model_pipeline_object()
-    else:
-        model_pipeline = get_model_pipeline_object()
+    model_pipeline = get_model_pipeline_object()
 
     return model_pipeline
 
@@ -265,10 +259,6 @@ def choose_business_portfolio(
     scenario_id = context.solid_config["scenario_id"]
     scenario_df = get_scenario_df()
 
-    application_acceptance_rate = scenario_df.loc[
-        scenario_df.id == scenario_id, "application_acceptance_rate"
-    ].iloc[0]
-
     current_application_df = (
         application_df.loc[
             application_df.application_date == application_df.application_date.max()
@@ -288,16 +278,6 @@ def choose_business_portfolio(
     assert (
         current_application_df.est_default_prob.isna().sum() == 0
     ), "Some estimated default probabilities NaN"
-
-    # NOTE: Top 'application_acceptance_rate'-percent of applicants selected
-    # business_portfolio_df = (
-    #     current_application_df.loc[
-    #         current_application_df["est_default_prob"].rank(method="first")
-    #         <= int(current_application_df.shape[0] * application_acceptance_rate)
-    #     ]
-    #     .copy()[["application_id", "simulation_id"]]
-    #     .reset_index(drop=True)
-    # )
 
     # NOTE: All applicants below 10% risk threshold accepted
     business_portfolio_df = (
@@ -332,47 +312,36 @@ def choose_research_portfolio(
     scenario_id = context.solid_config["scenario_id"]
     scenario_df = get_scenario_df()
 
-    business_to_research_ratio = scenario_df.loc[
-        scenario_df.id == scenario_id, "business_to_research_ratio"
-    ].iloc[0]
-
     active_learning_spec = scenario_df.loc[
         scenario_df.id == scenario_id, "active_learning_spec"
     ].iloc[0]
 
-    unfunded_applications = application_df[
+    research_acceptance_rate = scenario_df.loc[
+        scenario_df.id == scenario_id, "research_acceptance_rate"
+    ].iloc[0]
+
+    current_applications = application_df[
+        application_df.application_date == application_df.application_date.max()
+    ].copy()
+
+    unfunded_applications = current_applications[
         ~application_df.application_id.isin(portfolio_df.application_id.tolist())
-        & (application_df.application_date == application_df.application_date.max())
-    ]
+    ].copy()
 
     # NOTE: No applications this application_date!
     if unfunded_applications.shape[0] == 0:
         return portfolio_df
 
-    # NOTE: If business_to_research_ratio == 0, no research loans are made
-    if business_to_research_ratio == 0:
+    # NOTE: If research_acceptance_rate == 0, no research loans are made
+    if research_acceptance_rate == 0:
         return portfolio_df
 
-    business_loan_count = sum(
-        application_df.application_id.isin(portfolio_df.application_id.tolist())
-        & (application_df.application_date == application_df.application_date.max())
-    )
-    n_research_loans = int(business_loan_count * (1 / business_to_research_ratio))
+    n_research_loans = int(current_applications.shape[0] * research_acceptance_rate)
 
     if active_learning_spec == "random":
         research_portfolio_df = unfunded_applications.sample(
             min(n_research_loans, unfunded_applications.shape[0])
         )
-    elif active_learning_spec == "riskiest":
-        unfunded_applications["est_default_prob"] = pd.DataFrame(
-            model_pipeline.predict_proba(unfunded_applications.loc[:, X_vars])
-        ).loc[:, 1]
-        research_portfolio_df = unfunded_applications.loc[
-            unfunded_applications["est_default_prob"].rank(
-                method="first", ascending=False
-            )
-            <= min(n_research_loans, unfunded_applications.shape[0])
-        ]
     else:
 
         active_learning_df = prepare_training_data(

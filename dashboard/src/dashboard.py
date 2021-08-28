@@ -276,7 +276,7 @@ c = a.mark_errorband(extent="ci", opacity=0.2) + d + d.mark_point()
 c = c.properties(height=300, width=250)
 c = c.facet(
     row="active_learning_spec:N",
-    column="business_to_research_ratio:N",
+    column="research_acceptance_rate:N",
 )
 st.write(c)
 
@@ -284,7 +284,7 @@ st.write(c)
 no_active_learning_results = (
     df_summary_full.loc[
         df_summary_full.portfolio.isin(["business", "research"])
-        & (df_summary_full.business_to_research_ratio == 0)
+        & (df_summary_full.research_acceptance_rate == 0)
     ]
     .groupby("simulation_id")
     .counterfactual_default.mean()
@@ -301,7 +301,7 @@ active_learning_results = (
         [
             "simulation_id",
             "active_learning_spec",
-            "business_to_research_ratio",
+            "research_acceptance_rate",
             "portfolio",
         ]
     )
@@ -328,7 +328,7 @@ a = (
     .mark_point(opacity=0.1)
     .encode(
         x=alt.X(
-            "business_to_research_ratio:N",
+            "research_acceptance_rate:N",
             title="Business to Research Ratio",
             axis=alt.Axis(labelAngle=0),
         ),
