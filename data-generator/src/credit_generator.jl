@@ -31,7 +31,7 @@ function generate_synthetic_data(n_applications_per_period)
 
     loan_data_generator = @model age_var begin
         age ~ Distributions.TruncatedNormal(age_var, age_var, 0.01, 100)
-        idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, 1 / age)
+        idiosyncratic_individual_risk ~ Distributions.TruncatedNormal(0, 1 / (age * 5), -10, 10)
         total_default_risk_log_odds = idiosyncratic_individual_risk + age
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
