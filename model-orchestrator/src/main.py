@@ -457,7 +457,7 @@ def run_simulation(simulation_id, scenario_id):
             var_if_gr_1(i + 1, var): {
                 "config": {
                     "application_date": range(2021, 2031)[i],
-
+                    "simulation_id": simulation_id,
                     "scenario_id": scenario_id,
                 }
             }
