@@ -91,7 +91,6 @@ if True:
     df_long = df_long.loc[
         df_long.variable.isin(
             [
-                "age_sq",
                 "age",
                 "idiosyncratic_individual_risk",
                 "total_default_risk_log_odds",

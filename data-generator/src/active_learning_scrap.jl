@@ -14,9 +14,8 @@ n_applications_per_period = 10000
 loan_data_generator = @model age_var begin
     unif ~ MeasureTheory.Uniform()
     age = unif * age_var + age_var
-    age_sq = age ^ 2
     idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, (1 / age_var) / 3)
-    total_default_risk_log_odds = idiosyncratic_individual_risk + age_sq
+    total_default_risk_log_odds = idiosyncratic_individual_risk + age
     total_default_risk = logistic(total_default_risk_log_odds)
     default ~ MeasureTheory.Bernoulli(total_default_risk)
 end
