@@ -106,17 +106,16 @@ if True:
         alt.Chart(
             df_long[
                 df_long.variable.isin(
-                    ["Idiosyncratic Individual Risk", "Total Default Risk Log Odds", "Age Sq", "Age"]
+                    ["Idiosyncratic Individual Risk", "Total Default Risk Log Odds", "Age Sq"]
                 )
             ],
-            width=300,
-            height=300,
+            width=100,
+            height=100,
         )
         .transform_density(
             "value",
             groupby=["variable", "application_date"],
             as_=["risk_score", "density"],
-            # extent=[0, 1],
         )
         .mark_line(opacity=0.8)
         .encode(
@@ -128,8 +127,7 @@ if True:
             column=alt.Column("application_date:N", title="Application Date"),
             row=alt.Row("variable", title="Risk Parameter")
         )
-        .resolve_scale(x="independent")#, y="independent")
-        .properties(height=100, width=100)
+        .resolve_scale(x="independent", y="independent")
     )
     # p2 = p2.properties(height=500, width=1000)
 
