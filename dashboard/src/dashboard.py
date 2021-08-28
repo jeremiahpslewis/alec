@@ -47,6 +47,7 @@ if True:
                 "default",
                 title="Default Rate",
                 scale=pct_scale,
+                axis=alt.Axis(format="%"),
             ),
             x=alt.X(
                 "application_date:N",
@@ -65,6 +66,7 @@ if True:
                 "default",
                 title="Default Rate",
                 scale=pct_scale,
+                axis=alt.Axis(format="%"),
             ),
             x=alt.X(
                 "application_date:N",
@@ -79,6 +81,7 @@ if True:
             "mean(default)",
             title="Default Rate",
             scale=pct_scale,
+            axis=alt.Axis(format="%"),
         )
     )
 
@@ -108,7 +111,7 @@ if True:
                     [
                         "Idiosyncratic Individual Risk",
                         "Total Default Risk Log Odds",
-                        "Age Sq",
+                        "Age",
                     ]
                 )
             ],
