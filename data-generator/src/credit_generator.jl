@@ -38,7 +38,7 @@ function generate_synthetic_data(n_applications_per_period)
     end
     
     
-    age_var = [0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.2, 1.5, 2.0, 2.0]
+    age_var = [0.25, 0.25, 0.3, 0.4, 0.5, 1, 1.2, 1.5, 2.0, 2.0]
     
     business_cycle_df = DataFrame(
         "age_var" => age_var,
