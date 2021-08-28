@@ -20,8 +20,6 @@ tasks:
     command: ["python", "generate_summary_data.py"]
     timeout:
       100000
-    dependencies:
-      - run-alec
     env:
       AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
