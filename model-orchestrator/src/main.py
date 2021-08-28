@@ -258,7 +258,7 @@ def choose_business_portfolio(
 
     current_application_df = (
         application_df.loc[
-            application_df.application_date == application_df.application_date.max()
+            application_df.application_date == application_date
         ]
         .copy()
         .reset_index(drop=True)
@@ -284,7 +284,7 @@ def choose_business_portfolio(
     )
 
     business_portfolio_df["portfolio"] = "business"
-    business_portfolio_df["funding_probability"] = 1  # TODO: Change this?
+    business_portfolio_df["funding_probability"] = 1
     business_portfolio_df["credit_granted"] = True
 
     return portfolio_df.append(business_portfolio_df[full_portfolio_col_set])
@@ -394,9 +394,10 @@ def observe_outcomes(
 
     raw_data = get_raw_data(simulation_id, scenario_id)
     new_loan_outcomes = raw_data.loc[
-        (raw_data.application_date == application_date)
+        (~raw_data.application_id.isin(outcome_df.application_id.tolist()))
         & (raw_data.application_id.isin(portfolio_df.application_id.tolist()))
     ].copy()
+
     return outcome_df.append(new_loan_outcomes[full_outcome_col_set])
 
 
@@ -501,7 +502,7 @@ def run_simulation(simulation_id, scenario_id):
         model_pipeline = get_model_pipeline()
         active_learning_pipeline = get_active_learning_pipeline()
 
-        for t in range(10):
+        for t in range(9):
 
             trained_model = train_model(
                 application_df,

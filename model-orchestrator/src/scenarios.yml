@@ -1,7 +1,7 @@
 scenarios:
   - id: no-active-learning
     research_acceptance_rate: 0
-    active_learning_spec: entropy_sampling
+    active_learning_spec: random
   - id: r1
     research_acceptance_rate: 0.15
     active_learning_spec: random
