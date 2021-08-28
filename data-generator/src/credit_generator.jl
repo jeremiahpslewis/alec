@@ -30,7 +30,7 @@ function generate_synthetic_data(n_applications_per_period)
     simulation_id = string(UUIDs.uuid4())
 
     loan_data_generator = @model age_var begin
-        age ~ Distributions.TruncatedNormal(age_var, age_var, 0.01, 100)
+        age ~ Distributions.TruncatedNormal(age_var, age_var, age_var / 4, 100)
         idiosyncratic_individual_risk ~ Distributions.TruncatedNormal(0, 1 / (age * 5), -10, 10)
         total_default_risk_log_odds = idiosyncratic_individual_risk + age - 3
         total_default_risk = logistic(total_default_risk_log_odds)
@@ -38,7 +38,7 @@ function generate_synthetic_data(n_applications_per_period)
     end
     
     
-    age_var = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.9, 1.0, 1.0]
+    age_var = [0.1, 0.2, 0.3, 0.4, 0.5, 1, 1.2, 1.5, 2.0, 2.0]
     
     business_cycle_df = DataFrame(
         "age_var" => age_var,
