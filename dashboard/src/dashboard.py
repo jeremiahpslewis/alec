@@ -134,7 +134,7 @@ if True:
     st.write(p2)
 
     p3 = (
-        alt.Chart(df, title="Risk Score Distribution")
+        alt.Chart(df, height=200, width=200, title="Risk Score Distribution")
         .transform_density(
             "age",
             groupby=["application_date"],
@@ -149,6 +149,7 @@ if True:
         .facet(
             column=alt.Column("application_date:N", title="Application Date"),
         )
+        .resolve_scale(y="independent")
     )
 
     st.write(p3)
@@ -174,7 +175,7 @@ if True:
     # st.write(p4)
 
     p5 = (
-        alt.Chart(df)
+        alt.Chart(df, height=200, width=200)
         .mark_point()
         .encode(
             y=alt.Y(
