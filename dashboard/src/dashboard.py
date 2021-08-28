@@ -18,7 +18,7 @@ alt.data_transformers.disable_max_rows()
 s3 = boto3.resource("s3")
 s3_alec = s3.Bucket("alec")
 
-if False:
+if True:
     # Visualize Synthetic Data
 
     simulation_ids = [f.key for f in s3_alec.objects.filter(Prefix="synthetic_data/")]
@@ -91,8 +91,8 @@ if False:
     df_long = df_long.loc[
         df_long.variable.isin(
             [
-                "income_based_risk",
-                "asset_based_risk",
+                "age_sq",
+                "age",
                 "idiosyncratic_individual_risk",
                 "total_default_risk_log_odds",
             ]
@@ -106,7 +106,7 @@ if False:
         alt.Chart(
             df_long[
                 df_long.variable.isin(
-                    ["Idiosyncratic Individual Risk", "Total Default Risk Log Odds"]
+                    ["Idiosyncratic Individual Risk", "Total Default Risk Log Odds", "Age Sq", "Age"]
                 )
             ],
             width=300,
@@ -122,12 +122,14 @@ if False:
         .encode(
             x=alt.X("risk_score:Q", title="Log Odds Scale"),
             y=alt.Y("density:Q", title="Density"),
-            color=alt.Color("application_date:N", title="Application Date"),
+            color=alt.Color("variable:N", title="Application Date"),
         )
         .facet(
-            column=alt.Column("variable:N", title="Distribution of Risk Parameters"),
+            column=alt.Column("application_date:N", title="Application Date"),
+            row=alt.Row("variable", title="Risk Parameter")
         )
-        .resolve_scale(x="independent")
+        .resolve_scale(x="independent")#, y="independent")
+        .properties(height=100, width=100)
     )
     # p2 = p2.properties(height=500, width=1000)
 
@@ -136,14 +138,14 @@ if False:
     p3 = (
         alt.Chart(df, title="Risk Score Distribution")
         .transform_density(
-            "income_based_risk",
+            "age",
             groupby=["application_date"],
-            as_=["income_based_risk", "density"],
+            as_=["age", "density"],
             # extent=[0, 1],
         )
         .mark_line()
         .encode(
-            x=alt.X("income_based_risk:Q", title="Income Based Risk (Log Odds Scale)"),
+            x=alt.X("age:Q", title="Age Based Risk (Log Odds Scale)"),
             y=alt.Y("density:Q", title="Density"),
         )
         .facet(
@@ -153,25 +155,25 @@ if False:
 
     st.write(p3)
 
-    p4 = (
-        alt.Chart(df, title="Risk Score Distribution")
-        .transform_density(
-            "asset_based_risk",
-            groupby=["application_date"],
-            as_=["asset_based_risk", "density"],
-            # extent=[0, 1],
-        )
-        .mark_line()
-        .encode(
-            x=alt.X("asset_based_risk:Q", title="Asset Based Risk (Log Odds Scale)"),
-            y=alt.Y("density:Q", title="Density"),
-        )
-        .facet(
-            column=alt.Column("application_date:N", title="Application Date"),
-        )
-    )
+    # p4 = (
+    #     alt.Chart(df, title="Risk Score Distribution")
+    #     .transform_density(
+    #         "asset_based_risk",
+    #         groupby=["application_date"],
+    #         as_=["asset_based_risk", "density"],
+    #         # extent=[0, 1],
+    #     )
+    #     .mark_line()
+    #     .encode(
+    #         x=alt.X("asset_based_risk:Q", title="Asset Based Risk (Log Odds Scale)"),
+    #         y=alt.Y("density:Q", title="Density"),
+    #     )
+    #     .facet(
+    #         column=alt.Column("application_date:N", title="Application Date"),
+    #     )
+    # )
 
-    st.write(p4)
+    # st.write(p4)
 
     p5 = (
         alt.Chart(df)
@@ -183,8 +185,8 @@ if False:
                 axis=alt.Axis(format="%"),
             ),
             x=alt.X(
-                "income_based_risk",
-                title="Income Based Risk (Log Odds)",
+                "age",
+                title="Age Based Risk (Log Odds)",
             ),
         )
         .facet(
@@ -194,26 +196,26 @@ if False:
 
     st.write(p5)
 
-    p6 = (
-        alt.Chart(df)
-        .mark_point()
-        .encode(
-            y=alt.Y(
-                "total_default_risk",
-                title="Default Probability",
-                axis=alt.Axis(format="%"),
-            ),
-            x=alt.X(
-                "asset_based_risk",
-                title="Asset Based Risk (Log Odds)",
-            ),
-        )
-        .facet(
-            column=alt.Column("application_date:N", title="Application Date"),
-        )
-    )
+    # p6 = (
+    #     alt.Chart(df)
+    #     .mark_point()
+    #     .encode(
+    #         y=alt.Y(
+    #             "total_default_risk",
+    #             title="Default Probability",
+    #             axis=alt.Axis(format="%"),
+    #         ),
+    #         x=alt.X(
+    #             "asset_based_risk",
+    #             title="Asset Based Risk (Log Odds)",
+    #         ),
+    #     )
+    #     .facet(
+    #         column=alt.Column("application_date:N", title="Application Date"),
+    #     )
+    # )
 
-    st.write(p6)
+    # st.write(p6)
 
 
 df_summary_full = pd.read_parquet("s3://alec/dashboard/summary_data.parquet")
@@ -336,12 +338,13 @@ a = (
     )
 )
 
-d = a.encode(y="mean(net_default_rate_effect)")
+d = a.encode(y=alt.Y("mean(net_default_rate_effect)",             title="Net Default Rate Effect (Business Portfolio), in p.p.",
+))
 
 
 b = d.mark_errorband(extent="ci", opacity=0.2) + d.mark_line() + a
 
-b = b.properties(height=300, width=500)
+b = b.properties(height=300, width=250)
 
 b = b.facet(
     column=alt.Column("active_learning_spec:N", title="Active Learning Spec"),
