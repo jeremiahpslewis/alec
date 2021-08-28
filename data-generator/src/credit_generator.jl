@@ -1,6 +1,7 @@
 # using Pkg
 # Pkg.activate("/app")
 
+using Distributions
 using Soss
 using MeasureTheory
 using StatsPlots
