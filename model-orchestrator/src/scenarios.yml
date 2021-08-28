@@ -3,7 +3,7 @@ scenarios:
     research_acceptance_rate: 0
     active_learning_spec: entropy_sampling
   - id: r1
-    research_acceptance_rate: 0.2
+    research_acceptance_rate: 0.15
     active_learning_spec: random
   - id: r2
     research_acceptance_rate: 0.1
@@ -12,7 +12,7 @@ scenarios:
     research_acceptance_rate: 0.05
     active_learning_spec: random
   - id: u1
-    research_acceptance_rate: 0.2
+    research_acceptance_rate: 0.15
     active_learning_spec: uncertainty_sampling
   - id: u2
     research_acceptance_rate: 0.1
@@ -21,7 +21,7 @@ scenarios:
     research_acceptance_rate: 0.05
     active_learning_spec: uncertainty_sampling
   - id: m1
-    research_acceptance_rate: 0.2
+    research_acceptance_rate: 0.15
     active_learning_spec: margin_sampling
   - id: m2
     research_acceptance_rate: 0.1
@@ -30,7 +30,7 @@ scenarios:
     research_acceptance_rate: 0.05
     active_learning_spec: margin_sampling
   - id: e1
-    research_acceptance_rate: 0.2
+    research_acceptance_rate: 0.15
     active_learning_spec: entropy_sampling
   - id: e2
     research_acceptance_rate: 0.1
