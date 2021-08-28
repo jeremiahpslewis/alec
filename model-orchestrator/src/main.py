@@ -257,9 +257,7 @@ def choose_business_portfolio(
     scenario_df = get_scenario_df()
 
     current_application_df = (
-        application_df.loc[
-            application_df.application_date == application_date
-        ]
+        application_df.loc[application_df.application_date == application_date]
         .copy()
         .reset_index(drop=True)
     )
