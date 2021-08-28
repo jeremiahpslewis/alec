@@ -274,9 +274,9 @@ def choose_business_portfolio(
         current_application_df.est_default_prob.isna().sum() == 0
     ), "Some estimated default probabilities NaN"
 
-    # NOTE: All applicants below 10% risk threshold accepted
+    # NOTE: All applicants below 15% risk threshold accepted
     business_portfolio_df = (
-        current_application_df.loc[current_application_df["est_default_prob"] <= 0.1]
+        current_application_df.loc[current_application_df["est_default_prob"] <= 0.15]
         .copy()[["application_id", "simulation_id"]]
         .reset_index(drop=True)
     )
