@@ -1,6 +1,3 @@
-# using Pkg
-# Pkg.activate("/app")
-
 using Distributions
 using Soss
 using MeasureTheory
@@ -34,9 +31,9 @@ function generate_synthetic_data(n_applications_per_period)
 
     loan_data_generator = @model age_var, individual_risk_var begin
         unif ~ MeasureTheory.Uniform()
-        age ~ Distributions.TruncatedNormal(age_var, 0.5, 0, 100)
+        age ~ Distributions.TruncatedNormal(age_var, age_var, 0, 100)
         age_sq = age ^ 2
-        idiosyncratic_individual_risk ~ MeasureTheory.Normal(0, individual_risk_var)
+        idiosyncratic_individual_risk ~ MeasureTheory.Normal(-3, individual_risk_var)
         total_default_risk_log_odds = idiosyncratic_individual_risk + age_sq
         total_default_risk = logistic(total_default_risk_log_odds)
         default ~ MeasureTheory.Bernoulli(total_default_risk)
