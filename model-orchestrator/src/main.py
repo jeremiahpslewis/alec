@@ -438,7 +438,7 @@ def run_simulation(simulation_id, scenario_id):
                 "scenario_id": scenario_id,
             }
         }
-        for i in range(10)
+        for i in range(9)
         for var in [
             "choose_business_portfolio",
             "choose_research_portfolio",
@@ -461,7 +461,7 @@ def run_simulation(simulation_id, scenario_id):
                     "scenario_id": scenario_id,
                 }
             }
-            for i in range(10)
+            for i in range(9)
             for var in [
                 "get_applications",
                 "observe_outcomes",
