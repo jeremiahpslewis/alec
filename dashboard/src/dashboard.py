@@ -191,6 +191,7 @@ if True:
         .facet(
             column=alt.Column("application_date:N", title="Application Date"),
         )
+        .resolve_scale(y="independent")
     )
 
     st.write(p5)
