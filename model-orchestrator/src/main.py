@@ -162,11 +162,8 @@ def get_active_learning_pipeline(context):
 
     if active_learning_spec == "random":
         return None
-    elif active_learning_spec == "riskiest":
-        return None
     elif active_learning_spec != "random":
         return getattr(modAL.uncertainty, active_learning_spec)
-    return model_pipeline
 
 
 def prepare_training_data(
