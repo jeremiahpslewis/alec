@@ -30,7 +30,6 @@ function generate_synthetic_data(n_applications_per_period)
     simulation_id = string(UUIDs.uuid4())
 
     loan_data_generator = @model age_var begin
-        unif ~ MeasureTheory.Uniform()
         age ~ Distributions.TruncatedNormal(age_var, age_var, 0, 100)
         age_sq = age ^ 2
         idiosyncratic_individual_risk ~ MeasureTheory.Normal(-3, 1 / age)
