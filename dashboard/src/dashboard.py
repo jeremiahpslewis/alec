@@ -144,12 +144,16 @@ if True:
         .transform_density(
             "age",
             groupby=["application_date"],
-            as_=["age", "density"],
-            # extent=[0, 1],
+            as_=["total_default_risk", "density"],
+            extent=[0, 1],
         )
         .mark_line()
         .encode(
-            x=alt.X("age:Q", title="Age Based Risk (Log Odds Scale)"),
+            x=alt.X(
+                "total_default_risk:Q",
+                title="Default Probability",
+                axis=alt.Axis(format="%"),
+            ),
             y=alt.Y("density:Q", title="Density"),
         )
         .facet(
@@ -243,14 +247,14 @@ a = (
             axis=alt.Axis(format="%"),
             scale=pct_scale,
         ),
-        color="portfolio",
+        color=alt.Color("portfolio", title="Portfolio"),
     )
 )
 
 b = a.properties(height=300, width=250)
 
 b = b.facet(
-    column="portfolio:N",
+    column=alt.Column("portfolio:N", title="Portfolio"),
 )
 
 st.write(b)
@@ -268,7 +272,7 @@ d = (
             axis=alt.Axis(format="%"),
             scale=pct_scale,
         ),
-        color="portfolio",
+        color=alt.Color("portfolio", title="Portfolio"),
     )
 )
 
@@ -276,8 +280,8 @@ c = a.mark_errorband(extent="ci", opacity=0.2) + d + d.mark_point()
 
 c = c.properties(height=300, width=250)
 c = c.facet(
-    row="active_learning_spec:N",
-    column="research_acceptance_rate:N",
+    row=alt.Row("active_learning_spec:N", title="Active Learning Spec"),
+    column=alt.Column("research_acceptance_rate:N", title="Research Acceptance Rate"),
 )
 st.write(c)
 
@@ -321,7 +325,6 @@ active_learning_results["net_default_rate_effect"] = (
 )
 
 # TODO: Rerun for total portfolio including research portfolio
-# TODO: Overplot mean and uncertainty
 a = (
     alt.Chart(
         active_learning_results.loc[active_learning_results.portfolio == "business"]
@@ -337,7 +340,6 @@ a = (
             "net_default_rate_effect",
             title="Net Default Rate Effect (Business Portfolio), in p.p.",
             axis=alt.Axis(format="%"),
-            scale=pp_scale,
         ),
         color="portfolio",
     )
