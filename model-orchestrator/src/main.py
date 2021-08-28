@@ -355,7 +355,7 @@ def choose_research_portfolio(
             ],
         )
 
-        if active_learning_df.shape[0] >= n_research_loans:
+        if active_learning_df.shape[0] <= n_research_loans:
             research_portfolio_df = active_learning_df.copy()
         else:
             research_portfolio_df = active_learning_df.copy()
@@ -457,7 +457,7 @@ def run_simulation(simulation_id, scenario_id):
             var_if_gr_1(i + 1, var): {
                 "config": {
                     "application_date": range(2021, 2031)[i],
-                    "simulation_id": simulation_id,
+
                     "scenario_id": scenario_id,
                 }
             }
