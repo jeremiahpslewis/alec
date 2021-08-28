@@ -201,6 +201,7 @@ def prepare_training_data(
 
     return training_df.reset_index(drop=True)
 
+
 @solid
 def train_model(
     context,
@@ -289,11 +290,18 @@ def choose_business_portfolio(
     ), "Some estimated default probabilities NaN"
 
     # NOTE: Top 'application_acceptance_rate'-percent of applicants selected
+    # business_portfolio_df = (
+    #     current_application_df.loc[
+    #         current_application_df["est_default_prob"].rank(method="first")
+    #         <= int(current_application_df.shape[0] * application_acceptance_rate)
+    #     ]
+    #     .copy()[["application_id", "simulation_id"]]
+    #     .reset_index(drop=True)
+    # )
+
+    # NOTE: All applicants below 10% risk threshold accepted
     business_portfolio_df = (
-        current_application_df.loc[
-            current_application_df["est_default_prob"].rank(method="first")
-            <= int(current_application_df.shape[0] * application_acceptance_rate)
-        ]
+        current_application_df.loc[current_application_df["est_default_prob"] <= 0.1]
         .copy()[["application_id", "simulation_id"]]
         .reset_index(drop=True)
     )

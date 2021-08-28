@@ -106,7 +106,11 @@ if True:
         alt.Chart(
             df_long[
                 df_long.variable.isin(
-                    ["Idiosyncratic Individual Risk", "Total Default Risk Log Odds", "Age Sq"]
+                    [
+                        "Idiosyncratic Individual Risk",
+                        "Total Default Risk Log Odds",
+                        "Age Sq",
+                    ]
                 )
             ],
             width=100,
@@ -125,7 +129,7 @@ if True:
         )
         .facet(
             column=alt.Column("application_date:N", title="Application Date"),
-            row=alt.Row("variable", title="Risk Parameter")
+            row=alt.Row("variable", title="Risk Parameter"),
         )
         .resolve_scale(x="independent", y="independent")
     )
@@ -338,8 +342,12 @@ a = (
     )
 )
 
-d = a.encode(y=alt.Y("mean(net_default_rate_effect)",             title="Net Default Rate Effect (Business Portfolio), in p.p.",
-))
+d = a.encode(
+    y=alt.Y(
+        "mean(net_default_rate_effect)",
+        title="Net Default Rate Effect (Business Portfolio), in p.p.",
+    )
+)
 
 
 b = d.mark_errorband(extent="ci", opacity=0.2) + d.mark_line() + a
