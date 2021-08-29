@@ -8,8 +8,8 @@ import boto3
 import modAL
 import numpy as np
 import pandas as pd
-from modAL.models import ActiveLearner
 import sklearn
+from modAL.models import ActiveLearner
 from modAL.uncertainty import uncertainty_sampling
 from sklearn import linear_model
 from sklearn.compose import ColumnTransformer
@@ -45,6 +45,9 @@ full_outcome_col_set = [*simulation_indices, "default"]
 
 
 def get_scenario_df():
+    """
+    Set of scenarios which will be modeled, specified in YAML.
+    """
     with open("scenarios.yml", "r") as f:
         scenarios = safe_load(f)
         scenario_df = pd.DataFrame(scenarios["scenarios"])
@@ -52,6 +55,9 @@ def get_scenario_df():
 
 
 def get_raw_data(simulation_id, scenario_id):
+    """
+    Raw dataset drawn from synthetic data based on simulation_id and labeled with scenario_id.
+    """
     raw_df = pd.read_parquet(
         f"s3://{bucket_name}/synthetic_data/{simulation_id}.parquet"
     )
@@ -65,6 +71,9 @@ def get_raw_data(simulation_id, scenario_id):
 def get_historical_data(
     simulation_id, scenario_id
 ) -> list[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Fetch historical data. First period data is assumed to be available at start of simulation.
+    """
     df = get_raw_data(simulation_id, scenario_id)
     df["portfolio"] = "business"
     df["credit_granted"] = True
@@ -100,6 +109,9 @@ def get_historical_data(
 
 @solid(config_schema={"simulation_id": str, "scenario_id": str})
 def get_historical_application_data(context):
+    """
+    Fetch first period application data.
+    """
     simulation_id = context.solid_config["simulation_id"]
     scenario_id = context.solid_config["scenario_id"]
 
@@ -108,6 +120,7 @@ def get_historical_application_data(context):
 
 @solid(config_schema={"simulation_id": str, "scenario_id": str})
 def get_historical_portfolio_data(context):
+    """Fetch first period portfolio (granted loans) data."""
     simulation_id = context.solid_config["simulation_id"]
     scenario_id = context.solid_config["scenario_id"]
 
@@ -116,6 +129,9 @@ def get_historical_portfolio_data(context):
 
 @solid(config_schema={"simulation_id": str, "scenario_id": str})
 def get_historical_outcome_data(context):
+    """
+    Fetch first period outcome data.
+    """
     simulation_id = context.solid_config["simulation_id"]
     scenario_id = context.solid_config["scenario_id"]
 
@@ -123,6 +139,9 @@ def get_historical_outcome_data(context):
 
 
 def get_feature_pipeline():
+    """
+    Fetch feature pipeline.
+    """
     column_trans = ColumnTransformer(
         [
             (
@@ -137,6 +156,9 @@ def get_feature_pipeline():
 
 
 def get_model_pipeline_object():
+    """
+    Fetch model pipeline artifact.
+    """
     column_trans = get_feature_pipeline()
     model_pipeline = make_pipeline(column_trans, linear_model.LogisticRegression())
     return model_pipeline
@@ -144,6 +166,9 @@ def get_model_pipeline_object():
 
 @solid(config_schema={"scenario_id": str})
 def get_model_pipeline(context) -> sklearn.pipeline.Pipeline:
+    """
+    Fetch model pipeline.
+    """
     scenario_id = context.solid_config["scenario_id"]
     scenario_df = get_scenario_df()
 
@@ -156,6 +181,9 @@ def get_model_pipeline(context) -> sklearn.pipeline.Pipeline:
 
 @solid(config_schema={"scenario_id": str})
 def get_active_learning_pipeline(context):
+    """
+    Fetch active learning pipeline.
+    """
     scenario_id = context.solid_config["scenario_id"]
     scenario_df = get_scenario_df()
 
@@ -173,6 +201,9 @@ def get_active_learning_pipeline(context):
 def prepare_training_data(
     application_df: pd.DataFrame, portfolio_df: pd.DataFrame, outcome_df
 ):
+    """
+    Join datasets to create training data file.
+    """
     training_df = pd.merge(
         application_df, portfolio_df, on=["application_id", "simulation_id"], how="left"
     )
@@ -410,6 +441,9 @@ def export_results(
     portfolio_df: pd.DataFrame,
     outcome_df: pd.DataFrame,
 ):
+    """
+    Export simulation results to s3 for later analysis.
+    """
     simulation_id = context.solid_config["simulation_id"]
     scenario_id = context.solid_config["scenario_id"]
 
@@ -428,6 +462,9 @@ def export_results(
 
 
 def var_if_gr_1(i, var):
+    """
+    Helper function for associating dagster tasks with config variables
+    """
     if i > 1:
         return f"{var}_{i}"
     else:
@@ -435,6 +472,9 @@ def var_if_gr_1(i, var):
 
 
 def run_simulation(simulation_id, scenario_id):
+    """
+    Helper function for carrying out simulation for a given scenario.
+    """
     solids_dict = {
         var_if_gr_1(i + 1, var): {
             "config": {
@@ -500,6 +540,9 @@ def run_simulation(simulation_id, scenario_id):
         ],
     )
     def active_learning_experiment_credit():
+        """
+        Active learning 'main' function.
+        """
         application_df = get_historical_application_data()
         portfolio_df = get_historical_portfolio_data()
         outcome_df = get_historical_outcome_data()
