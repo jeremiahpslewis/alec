@@ -3,7 +3,7 @@ import os
 import boto3
 import pandas as pd
 
-bucket_name = os.getenv('S3_BUCKET_NAME')
+bucket_name = os.getenv("S3_BUCKET_NAME")
 
 s3 = boto3.resource("s3")
 s3_alec = s3.Bucket(bucket_name)
@@ -38,7 +38,7 @@ df_summary_full = pd.DataFrame()
 for scenario_id in scenario_ids:
     for simulation_id in simulation_ids:
         print(f"Scenario: {scenario_id}, Simulation: {simulation_id}")
-        
+
         app_df = pd.read_parquet(
             f"s3://{bucket_name}/applications/{scenario_id}/{simulation_id}.parquet"
         )
@@ -88,7 +88,6 @@ for scenario_id in scenario_ids:
         df_summary_all["portfolio"] = "full_dataset"
 
         df_summary_full = df_summary_full.append(df_summary).append(df_summary_all)
-
 
 
 df_summary_full.to_parquet(f"s3://{bucket_name}/dashboard/summary_data.parquet")

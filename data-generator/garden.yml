@@ -1,7 +1,6 @@
 kind: Module
 type: container
 name: generate-synthetic-data
-# disabled: true
 tasks:
   - name: generate-synthetic-data
     command: [julia, /app/credit_generator.jl]
@@ -14,7 +13,6 @@ tasks:
       S3_BUCKET_NAME: ${var.S3_BUCKET_NAME}
 services:
   - name: julia-server
-    # disabled: true
     command: [julia, -e, 'sleep(1000)']
     ports:
       - name: http

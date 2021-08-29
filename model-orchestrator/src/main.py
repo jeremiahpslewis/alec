@@ -17,7 +17,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from yaml import safe_load
 
-bucket_name = os.getenv('S3_BUCKET_NAME')
+bucket_name = os.getenv("S3_BUCKET_NAME")
 
 # NOTE: counterfactual_default is defined as default outcome had applicant been granted loan
 simulation_indices = ["simulation_id", "application_id"]
@@ -52,7 +52,9 @@ def get_scenario_df():
 
 
 def get_raw_data(simulation_id, scenario_id):
-    raw_df = pd.read_parquet(f"s3://{bucket_name}/synthetic_data/{simulation_id}.parquet")
+    raw_df = pd.read_parquet(
+        f"s3://{bucket_name}/synthetic_data/{simulation_id}.parquet"
+    )
     raw_df = raw_df.loc[raw_df.simulation_id == simulation_id].copy()
     raw_df.reset_index(inplace=True, drop=True)
     raw_df["counterfactual_default"] = raw_df["default"]
@@ -417,7 +419,9 @@ def export_results(
     portfolio_df.to_parquet(
         f"s3://{bucket_name}/portfolios/{scenario_id}/{simulation_id}.parquet"
     )
-    outcome_df.to_parquet(f"s3://{bucket_name}/outcomes/{scenario_id}/{simulation_id}.parquet")
+    outcome_df.to_parquet(
+        f"s3://{bucket_name}/outcomes/{scenario_id}/{simulation_id}.parquet"
+    )
     get_scenario_df().to_parquet(
         f"s3://{bucket_name}/scenarios/{scenario_id}/{simulation_id}.parquet"
     )

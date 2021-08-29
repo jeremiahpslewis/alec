@@ -17,7 +17,7 @@ st.title("ALEC: Active Learning Experiment Credit")
 
 alt.data_transformers.disable_max_rows()
 
-bucket_name = os.getenv('S3_BUCKET_NAME')
+bucket_name = os.getenv("S3_BUCKET_NAME")
 
 s3 = boto3.resource("s3")
 s3_alec = s3.Bucket(bucket_name)
@@ -33,7 +33,9 @@ if True:
     df = pd.DataFrame()
 
     for simulation_id in simulation_ids:
-        raw_df = pd.read_parquet(f"s3://{bucket_name}/synthetic_data/{simulation_id}.parquet")
+        raw_df = pd.read_parquet(
+            f"s3://{bucket_name}/synthetic_data/{simulation_id}.parquet"
+        )
         raw_df = raw_df.loc[raw_df.simulation_id == simulation_id].copy()
         raw_df.reset_index(inplace=True, drop=True)
         df = df.append(raw_df)
@@ -167,26 +169,6 @@ if True:
     )
 
     st.write(p3)
-
-    # p4 = (
-    #     alt.Chart(df, title="Risk Score Distribution")
-    #     .transform_density(
-    #         "asset_based_risk",
-    #         groupby=["application_date"],
-    #         as_=["asset_based_risk", "density"],
-    #         # extent=[0, 1],
-    #     )
-    #     .mark_line()
-    #     .encode(
-    #         x=alt.X("asset_based_risk:Q", title="Asset Based Risk (Log Odds Scale)"),
-    #         y=alt.Y("density:Q", title="Density"),
-    #     )
-    #     .facet(
-    #         column=alt.Column("application_date:N", title="Application Date"),
-    #     )
-    # )
-
-    # st.write(p4)
 
     p5 = (
         alt.Chart(df, height=200, width=200)
@@ -328,7 +310,6 @@ active_learning_results["net_default_rate_effect"] = (
     - active_learning_results["no_active_learning_default"]
 )
 
-# TODO: Rerun for total portfolio including research portfolio
 a = (
     alt.Chart(
         active_learning_results.loc[active_learning_results.portfolio == "business"]

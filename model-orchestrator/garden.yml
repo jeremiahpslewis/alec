@@ -6,8 +6,6 @@ services:
     ports:
       - name: http
         containerPort: 3000
-    # dependencies:
-    #   - generate-synthetic-data
     limits:
       memory: 10240
     devMode:
