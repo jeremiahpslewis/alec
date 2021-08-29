@@ -8,8 +8,8 @@ bucket_name = os.getenv("S3_BUCKET_NAME")
 s3 = boto3.resource("s3")
 s3_alec = s3.Bucket(bucket_name)
 
-simulation_ids = []
-scenario_ids = []
+simulation_ids_list = []
+scenario_ids_list = []
 
 # Fetch simulation data
 for i in ["applications", "outcomes", "portfolios", "scenarios"]:
@@ -17,18 +17,18 @@ for i in ["applications", "outcomes", "portfolios", "scenarios"]:
     simulation_ids_tmp = [
         simulation_id.split("/")[2].split(".")[0] for simulation_id in file_paths_tmp
     ]
-    simulation_ids.extend(simulation_ids_tmp)
+    simulation_ids_list.extend(simulation_ids_tmp)
 
     scenario_ids_tmp = [simulation_id.split("/")[1] for simulation_id in file_paths_tmp]
-    scenario_ids.extend(scenario_ids_tmp)
+    scenario_ids_list.extend(scenario_ids_tmp)
 
-simulation_ids = pd.DataFrame({"simulation_id": simulation_ids})
+simulation_ids = pd.DataFrame({"simulation_id": simulation_ids_list})
 simulation_ids = simulation_ids.value_counts().reset_index()
 simulation_ids = simulation_ids.loc[
     simulation_ids.loc[:, 0] == simulation_ids.loc[:, 0].max(), "simulation_id"
 ].tolist()
 
-scenario_ids = pd.DataFrame({"scenario_id": scenario_ids})
+scenario_ids = pd.DataFrame({"scenario_id": scenario_ids_list})
 scenario_ids = scenario_ids.value_counts().reset_index()
 scenario_ids = scenario_ids.loc[
     scenario_ids.loc[:, 0] == scenario_ids.loc[:, 0].max(), "scenario_id"
