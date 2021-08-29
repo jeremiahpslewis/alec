@@ -31,3 +31,7 @@ jobs:
           garden test -n test-alec --force
         env:
           GARDEN_LOGGER_TYPE: basic
+          AWS_ACCESS_KEY_ID: null
+          AWS_SECRET_ACCESS_KEY: null
+          S3_BUCKET_NAME: null
+
