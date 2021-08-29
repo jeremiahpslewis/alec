@@ -11,6 +11,7 @@ s3_alec = s3.Bucket(bucket_name)
 simulation_ids = []
 scenario_ids = []
 
+# Fetch simulation data
 for i in ["applications", "outcomes", "portfolios", "scenarios"]:
     file_paths_tmp = [f.key for f in s3_alec.objects.filter(Prefix=f"{i}/")]
     simulation_ids_tmp = [
@@ -35,6 +36,7 @@ scenario_ids = scenario_ids.loc[
 
 df_summary_full = pd.DataFrame()
 
+# Join together simulation data and calculate summary statistics
 for scenario_id in scenario_ids:
     for simulation_id in simulation_ids:
         print(f"Scenario: {scenario_id}, Simulation: {simulation_id}")
