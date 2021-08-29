@@ -15,6 +15,7 @@ services:
     env:
       AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
+      S3_BUCKET_NAME: ${var.S3_BUCKET_NAME}
 tasks:
   - name: generate-summary-data
     command: ["python", "generate_summary_data.py"]
@@ -23,3 +24,4 @@ tasks:
     env:
       AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
+      S3_BUCKET_NAME: ${var.S3_BUCKET_NAME}

@@ -75,16 +75,18 @@ function generate_synthetic_data(n_applications_per_period)
         write_parquet(file_path, _)
     end
 
-    run(`aws s3api put-object --bucket alec --key synthetic_data/$(simulation_id).parquet --body $(simulation_id).parquet`)
+    bucket_name = ENV["S3_BUCKET_NAME"]
+    run(`aws s3api put-object --bucket $(bucket_name) --key synthetic_data/$(simulation_id).parquet --body $(simulation_id).parquet`)
     rm(file_path)
 
     return portfolio_df
 end
 
 function generate_synthetic_data(n_applications_per_period, n_simulations)
+    bucket_name = ENV["S3_BUCKET_NAME"]
 
     # Clear bucket of synthetic data...
-    run(`aws s3 rm s3://alec/synthetic_data --recursive`)
+    run(`aws s3 rm s3://$(bucket_name)/synthetic_data --recursive`)
 
     for i = 1:n_simulations
         generate_synthetic_data(n_applications_per_period)

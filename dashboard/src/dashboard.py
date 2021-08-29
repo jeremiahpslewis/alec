@@ -1,3 +1,5 @@
+import os
+
 import altair as alt
 import boto3
 import pandas as pd
@@ -15,8 +17,10 @@ st.title("ALEC: Active Learning Experiment Credit")
 
 alt.data_transformers.disable_max_rows()
 
+bucket_name = os.getenv('S3_BUCKET_NAME')
+
 s3 = boto3.resource("s3")
-s3_alec = s3.Bucket("alec")
+s3_alec = s3.Bucket(bucket_name)
 
 if True:
     # Visualize Synthetic Data
@@ -29,7 +33,7 @@ if True:
     df = pd.DataFrame()
 
     for simulation_id in simulation_ids:
-        raw_df = pd.read_parquet(f"s3://alec/synthetic_data/{simulation_id}.parquet")
+        raw_df = pd.read_parquet(f"s3://{bucket_name}/synthetic_data/{simulation_id}.parquet")
         raw_df = raw_df.loc[raw_df.simulation_id == simulation_id].copy()
         raw_df.reset_index(inplace=True, drop=True)
         df = df.append(raw_df)
@@ -227,7 +231,7 @@ if True:
     # st.write(p6)
 
 
-df_summary_full = pd.read_parquet("s3://alec/dashboard/summary_data.parquet")
+df_summary_full = pd.read_parquet(f"s3://{bucket_name}/dashboard/summary_data.parquet")
 
 df_plot = df_summary_full[df_summary_full.application_date > 2020].copy()
 

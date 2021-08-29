@@ -11,6 +11,7 @@ tasks:
       AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
       AWS_REGION: eu-central-1
+      S3_BUCKET_NAME: ${var.S3_BUCKET_NAME}
 services:
   - name: julia-server
     # disabled: true
@@ -27,3 +28,5 @@ services:
       AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
       AWS_REGION: eu-central-1
+      S3_BUCKET_NAME: ${var.S3_BUCKET_NAME}
+

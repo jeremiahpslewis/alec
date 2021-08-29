@@ -17,7 +17,8 @@ services:
           mode: two-way
     env:
       AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}      
+      AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
+      S3_BUCKET_NAME: ${var.S3_BUCKET_NAME}
 tasks:
   - name: run-alec
     command: ["python", "main.py"]
@@ -26,6 +27,7 @@ tasks:
     env:
       AWS_ACCESS_KEY_ID: ${var.AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${var.AWS_SECRET_ACCESS_KEY}
+      S3_BUCKET_NAME: ${var.S3_BUCKET_NAME}
 tests:
   - name: test-alec
     disabled: true
